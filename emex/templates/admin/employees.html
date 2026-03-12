@@ -1,0 +1,287 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+  :root{
+    --primary:#1e40af; --primary-2:#3b82f6;
+    --success:#059669; --warn:#f59e0b; --danger:#dc2626;
+    --bg:#f5f7fb; --card:#fff; --text:#0f172a; --muted:#64748b; --border:#e5e9f2;
+    --shadow-sm:0 1px 2px rgba(2,6,23,.06); --shadow-md:0 12px 30px rgba(2,6,23,.06);
+  }
+  .wrap{min-height:100vh;background:var(--bg);padding:24px}
+
+  .hero{
+    background:linear-gradient(135deg,var(--primary),var(--primary-2)); color:#fff;
+    border-radius:18px; padding:22px 26px; margin-bottom:16px; box-shadow:var(--shadow-md)
+  }
+  .hero h1{margin:0 0 4px 0; font-weight:900}
+  .hero .period{opacity:.9}
+  .tabs{display:flex;gap:.5rem;background:#ffffff22;border-radius:10px;padding:4px}
+  .tab{padding:.45rem 1rem;border-radius:8px;border:none;background:transparent;color:#fff;font-weight:800;text-decoration:none}
+  .tab.active{background:#fff;color:var(--primary);box-shadow:var(--shadow-sm)}
+
+  .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:12px 0 16px}
+  .kpi{
+    position:relative; min-height:112px;
+    background:linear-gradient(180deg,#fff,#fafbff);
+    border:1px solid var(--border); border-radius:14px; padding:14px 16px; box-shadow:var(--shadow-sm); overflow:hidden;
+  }
+  .kpi::before{
+    content:""; position:absolute; inset:-1px; border-radius:14px; pointer-events:none;
+    background:radial-gradient(380px 160px at 110% -20%, rgba(59,130,246,.12), transparent 60%);
+  }
+  .kpi .accent{position:absolute; left:0; top:0; bottom:0; width:6px; background:linear-gradient(180deg,var(--primary-2),var(--primary)); border-radius:14px 0 0 14px}
+  .kpi-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+  .kpi-icon{
+    width:42px;height:42px;border-radius:12px;display:grid;place-items:center;
+    background:linear-gradient(135deg,var(--primary-2),var(--primary)); color:#fff; font-size:1.15rem;
+    box-shadow:0 6px 16px rgba(30,64,175,.25)
+  }
+  .kpi .label{color:var(--muted);text-transform:uppercase;letter-spacing:.03em;font-weight:800;font-size:.78rem}
+  .kpi .value{font-weight:900;font-size:1.55rem;color:var(--text);margin-top:4px;line-height:1.1}
+
+  .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px 16px;box-shadow:var(--shadow-sm)}
+  .title{font-weight:900;color:var(--text);margin:0 0 8px}
+  .list{max-height:360px;overflow:auto}
+
+  .rank-list{display:grid;gap:10px}
+  .rank-row{display:grid;grid-template-columns:32px 1fr 110px;gap:10px;align-items:center}
+  .rank-num{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;font-weight:900;background:#eef2ff;border:1px solid #c7d2fe;color:#111827}
+  .rank-label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .rank-bar{position:relative;height:10px;background:#eef2f7;border-radius:999px;overflow:hidden;margin-top:4px}
+  .rank-fill{position:absolute;inset:0 100% 0 0;background:linear-gradient(90deg,var(--primary-2),var(--primary))}
+  .rank-value{font-weight:900;text-align:right}
+  .pill{display:inline-block;background:#eef2ff;color:#1e40af;border-radius:999px;padding:.2rem .6rem;font-weight:800;font-size:.74rem}
+
+  .table-card{padding:12px 12px 6px}
+  .table-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 4px 8px}
+  .search{max-width:260px;border:2px solid var(--border);border-radius:10px;padding:.55rem .75rem;font-size:.95rem}
+  .search:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(30,64,175,.12)}
+  .table-wrap{border:1px solid var(--border);border-radius:12px;overflow:auto;max-height:52vh;background:#fff}
+  table{width:100%;border-collapse:collapse}
+  thead th{
+    position:sticky;top:0;z-index:1;background:#f8fafc;
+    font-size:.82rem;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;text-align:left;
+    padding:.8rem;border-bottom:1px solid var(--border)
+  }
+  tbody td{padding:.8rem;border-bottom:1px solid var(--border);vertical-align:middle}
+  tbody tr:nth-child(odd){background:#fcfcff}
+  tbody tr:hover{background:#f8fafc}
+  .btn-view{white-space:nowrap;border-radius:10px;padding:.4rem .7rem}
+
+  @media (max-width:720px){
+    .rank-row{grid-template-columns:28px 1fr 88px}
+    .rank-value{font-size:.95rem}
+  }
+</style>
+
+<div class="wrap">
+  <!-- Header -->
+  <div class="hero d-flex justify-content-between align-items-center flex-wrap">
+    <div>
+      <h1 class="h4 fw-bold">Empleados — análisis</h1>
+      <div class="period">Del {{ start.strftime("%Y-%m-%d") }} al {{ end.strftime("%Y-%m-%d") }}</div>
+    </div>
+    <div class="tabs">
+      {% set p = period %}
+      <a class="tab {{ 'week'==p and 'active' or '' }}" href="{{ url_for('admin.employees', period='week') }}">Semanal</a>
+      <a class="tab {{ 'month'==p and 'active' or '' }}" href="{{ url_for('admin.employees', period='month') }}">Mensual</a>
+      <a class="tab {{ 'quarter'==p and 'active' or '' }}" href="{{ url_for('admin.employees', period='quarter') }}">Trimestral</a>
+      <a class="btn btn-light ms-2" href="{{ url_for('admin.employees_catalog') }}">Ver catálogo</a>
+
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-grid">
+    <div class="kpi"><span class="accent"></span><div class="kpi-top"><div class="kpi-icon">👷‍♂️</div></div><div class="label">Empleados activos</div><div class="value">{{ kpis.workers }}</div></div>
+    <div class="kpi"><span class="accent"></span><div class="kpi-top"><div class="kpi-icon">📝</div></div><div class="label">Registros</div><div class="value">{{ kpis.logs }}</div></div>
+    <div class="kpi"><span class="accent"></span><div class="kpi-top"><div class="kpi-icon">⏱️</div></div><div class="label">Horas totales</div><div class="value">{{ "{:,.1f}".format(kpis.hours) }}</div></div>
+    <div class="kpi"><span class="accent"></span><div class="kpi-top"><div class="kpi-icon">⚙️</div></div><div class="label">Productivas</div><div class="value">{{ "{:,.1f}".format(kpis.prod) }}</div></div>
+    <div class="kpi"><span class="accent"></span><div class="kpi-top"><div class="kpi-icon">📈</div></div><div class="label">Rendimiento prom.</div><div class="value">{{ "{:.1f}".format(kpis.avg_perf) }}%</div></div>
+    <div class="kpi"><span class="accent"></span><div class="kpi-top"><div class="kpi-icon">⏳</div></div><div class="label">Horas extra</div><div class="value">{{ "{:,.1f}".format(kpis.overtime) }}</div></div>
+    <div class="kpi"><span class="accent"></span><div class="kpi-top"><div class="kpi-icon">💵</div></div><div class="label">Ventas</div><div class="value">${{ "{:,.2f}".format(kpis.sales) }}</div></div>
+    <div class="kpi"><span class="accent"></span><div class="kpi-top"><div class="kpi-icon">💹</div></div><div class="label">Utilidad</div><div class="value">${{ "{:,.2f}".format(kpis.utility) }}</div></div>
+  </div>
+
+  <!-- Gráfico -->
+  <div class="card mb-3">
+    <h3 class="title">Tendencias (productivas, horas extra, incidencias)</h3>
+    <div style="height:300px"><canvas id="empChart"></canvas></div>
+  </div>
+
+  <div class="row g-3">
+    <!-- Rankings izquierda -->
+    <div class="col-lg-4">
+      <div class="card mb-3">
+        <h3 class="title">Top rendimiento</h3>
+        {% set max_perf = (top_perf[0].performance) if top_perf and (top_perf|length) > 0 else 0 %}
+        <div class="rank-list">
+          {% for e in top_perf %}
+            {% set pct = 0 if (max_perf is none or max_perf <= 0) else ( (e.performance|float) * 100.0 / (max_perf|float) ) %}
+            <div class="rank-row">
+              <div class="rank-num">{{ loop.index }}</div>
+              <div>
+                <div class="rank-label fw-bold">{{ e.name }} <span class="pill">{{ "{:.0f}".format(e.hours) }}h</span></div>
+                <div class="rank-bar"><span class="rank-fill" style="inset:0 {{ (100.0 - pct)|round(2) }}% 0 0"></span></div>
+              </div>
+              <div class="rank-value text-primary">{{ "{:.1f}".format(e.performance) }}%</div>
+            </div>
+          {% else %}
+            <div class="text-muted">Sin datos</div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="card mb-3">
+        <h3 class="title">Más horas extra</h3>
+        {% set max_ot = (top_ot[0].overtime) if top_ot and (top_ot|length) > 0 else 0 %}
+        <div class="rank-list">
+          {% for e in top_ot %}
+            {% set pct = 0 if (max_ot is none or max_ot <= 0) else ( (e.overtime|float) * 100.0 / (max_ot|float) ) %}
+            <div class="rank-row">
+              <div class="rank-num">{{ loop.index }}</div>
+              <div>
+                <div class="rank-label fw-bold">{{ e.name }}</div>
+                <div class="rank-bar"><span class="rank-fill" style="inset:0 {{ (100.0 - pct)|round(2) }}% 0 0; background:linear-gradient(90deg,#10b981,#16a34a)"></span></div>
+              </div>
+              <div class="rank-value" style="color:#065f46">{{ "{:.1f}".format(e.overtime) }} h</div>
+            </div>
+          {% else %}
+            <div class="text-muted">Sin datos</div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="title">Menos horas extra</h3>
+        <div class="list">
+          {% for e in low_ot %}
+            <div class="d-flex justify-content-between mb-2">
+              <div class="fw-bold">{{ e.name }}</div>
+              <div class="rank-value" style="color:#065f46">{{ "{:.1f}".format(e.overtime) }} h</div>
+            </div>
+          {% else %}<div class="text-muted">Sin datos</div>{% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Rankings + Tabla derecha -->
+    <div class="col-lg-8">
+      <div class="row g-3">
+        <div class="col-md-6">
+          <div class="card h-100">
+            <h3 class="title">Top ventas</h3>
+            {% set max_sales = (top_sales[0].sales) if top_sales and (top_sales|length) > 0 else 0 %}
+            <div class="rank-list">
+              {% for e in top_sales %}
+                {% set pct = 0 if (max_sales is none or max_sales <= 0) else ( (e.sales|float) * 100.0 / (max_sales|float) ) %}
+                <div class="rank-row">
+                  <div class="rank-num">{{ loop.index }}</div>
+                  <div>
+                    <div class="rank-label fw-bold">{{ e.name }}</div>
+                    <div class="rank-bar"><span class="rank-fill" style="inset:0 {{ (100.0 - pct)|round(2) }}% 0 0; background:linear-gradient(90deg,#3b82f6,#1e40af)"></span></div>
+                  </div>
+                  <div class="rank-value text-primary">${{ "{:,.2f}".format(e.sales) }}</div>
+                </div>
+              {% else %}<div class="text-muted">Sin datos</div>{% endfor %}
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card h-100">
+            <h3 class="title">Más incidencias</h3>
+            {% set max_inc = (top_incidents[0].incidents) if top_incidents and (top_incidents|length) > 0 else 0 %}
+            <div class="rank-list">
+              {% for e in top_incidents %}
+                {% set pct = 0 if (max_inc is none or max_inc <= 0) else ( (e.incidents|float) * 100.0 / (max_inc|float) ) %}
+                <div class="rank-row">
+                  <div class="rank-num">{{ loop.index }}</div>
+                  <div>
+                    <div class="rank-label fw-bold">{{ e.name }}</div>
+                    <div class="rank-bar"><span class="rank-fill" style="inset:0 {{ (100.0 - pct)|round(2) }}% 0 0; background:linear-gradient(90deg,#fbbf24,#f59e0b)"></span></div>
+                  </div>
+                  <div class="rank-value" style="color:#a16207">{{ e.incidents }}</div>
+                </div>
+              {% else %}<div class="text-muted">Sin datos</div>{% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabla resumen -->
+      <div class="card table-card mt-3">
+        <div class="table-head">
+          <h3 class="title mb-0">Resumen por empleado</h3>
+          <input id="empSearch" class="search" placeholder="Buscar empleado...">
+        </div>
+        <div class="table-wrap">
+          <table id="empTable">
+            <thead>
+              <tr>
+                <th>Empleado</th><th>Reg.</th><th>Horas</th><th>Prod. %</th>
+                <th>Hrs. extra</th><th>Incidencias</th><th>Ventas</th><th>Utilidad</th><th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for e in table_rows %}
+              <tr>
+                <td>{{ e.name }}</td>
+                <td>{{ e.logs }}</td>
+                <td>{{ "{:.1f}".format(e.hours) }}</td>
+                <td>{{ "{:.1f}".format(e.performance) }}%</td>
+                <td>{{ "{:.1f}".format(e.overtime) }}</td>
+                <td>{{ e.incidents }}</td>
+                <td>${{ "{:,.2f}".format(e.sales) }}</td>
+                <td>${{ "{:,.2f}".format(e.utility) }}</td>
+                <td><a class="btn btn-outline-primary btn-sm btn-view" href="{{ url_for('admin.employee_detail', user_id=e.id, period=period) }}">Ver</a></td>
+              </tr>
+              {% else %}
+              <tr><td colspan="9" class="text-muted text-center">Sin datos</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const MXN = new Intl.NumberFormat('es-MX',{style:'currency',currency:'MXN',maximumFractionDigits:2});
+
+// Filtro tabla
+document.getElementById('empSearch')?.addEventListener('input', e=>{
+  const q = e.target.value.toLowerCase();
+  document.querySelectorAll('#empTable tbody tr').forEach(tr=>{
+    tr.style.display = tr.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+});
+
+// Gráfica
+fetch(`{{ url_for('admin.api_employees_summary', period=period) }}`)
+  .then(r=>r.json())
+  .then(d=>{
+    const ctx = document.getElementById('empChart').getContext('2d');
+    new Chart(ctx,{
+      type:'line',
+      data:{
+        labels:d.labels,
+        datasets:[
+          {label:'Prod. horas', data:d.prod, borderColor:'#3b82f6', backgroundColor:'rgba(59,130,246,.15)', tension:.35},
+          {label:'Horas extra', data:d.ot, borderColor:'#10b981', backgroundColor:'rgba(16,185,129,.15)', tension:.35},
+          {label:'Incidencias', data:d.inc, borderColor:'#f59e0b', backgroundColor:'rgba(245,158,11,.15)', tension:.35, yAxisID:'y1'},
+        ]
+      },
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        scales:{ y:{beginAtZero:true}, y1:{position:'right', beginAtZero:true, grid:{drawOnChartArea:false}} },
+        plugins:{legend:{display:true}}
+      }
+    });
+  });
+</script>
+
+{% endblock %}

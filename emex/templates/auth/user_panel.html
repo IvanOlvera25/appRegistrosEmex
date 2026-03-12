@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% block title %}Mi panel · EMEX{% endblock %}
+
+{% block content %}
+<section class="dashboard">
+  <!-- Hero -->
+  <header class="dash-head pro">
+    <div>
+      <h1 class="title">Hola, {{ current_user.name or 'Usuario' }} 👋</h1>
+      <p class="subtitle">Este es tu panel personal. Revisa tu productividad, combustible y últimos registros.</p>
+    </div>
+    <div class="dash-actions">
+      <a class="btn" href="{{ url_for('worker.index') }}">Registrar actividad</a>
+    </div>
+  </header>
+
+  <!-- KPIs -->
+  <section class="grid-cards kpi-4">
+    <div class="card kpi elevate">
+      <div class="kpi-top">
+        <span class="kpi-label">Registros</span>
+        <span class="kpi-value">{{ stats.logs }}</span>
+      </div>
+      <div class="kpi-foot muted">Total de capturas</div>
+    </div>
+
+    <div class="card kpi elevate">
+      <div class="kpi-top">
+        <span class="kpi-label">Horas totales</span>
+        <span class="kpi-value">{{ "%.2f"|format(stats.hours) }}</span>
+      </div>
+      <div class="kpi-foot muted">Productivas: {{ "%.2f"|format(stats.prod) }}</div>
+    </div>
+
+    <div class="card kpi elevate">
+      <div class="kpi-top">
+        <span class="kpi-label">Rendimiento</span>
+        <span class="kpi-value">{{ "%.1f"|format(stats.performance) }}%</span>
+      </div>
+      <div class="kpi-foot muted">Horas extra: {{ "%.2f"|format(stats.overtime) }}</div>
+    </div>
+
+    <div class="card kpi elevate">
+      <div class="kpi-top">
+        <span class="kpi-label">Combustible</span>
+        <span class="kpi-value">{{ "%.2f"|format(stats.liters) }} L</span>
+      </div>
+      <div class="kpi-foot muted">Servicios/incidencias: {{ stats.si_count }}</div>
+    </div>
+  </section>
+
+  <!-- Gráfico de tendencia -->
+  <section class="card elevate" style="margin-top:12px">
+    <div class="card-head">
+      <h2 class="mini-card-title">Tendencia reciente</h2>
+      <p class="muted">Horas totales vs productivas por registro (últimos 30).</p>
+    </div>
+    {% if logs %}
+      <div class="canvas-wrap">
+        <canvas id="trendChart" height="110"></canvas>
+      </div>
+    {% else %}
+      <div class="empty"><div class="empty-emoji">🗂️</div><p>Aún no tienes registros para graficar.</p></div>
+    {% endif %}
+  </section>
+
+  <!-- Últimos registros -->
+  <section class="card elevate" style="margin-top:12px">
+    <div class="card-head">
+      <h2 class="mini-card-title">Últimos registros</h2>
+      <p class="muted">Tus capturas más recientes.</p>
+    </div>
+
+    {% if logs %}
+      <div class="table-wrap">
+        <table class="table compact">
+          <thead class="sticky">
+            <tr>
+              <th>Fecha</th>
+              <th>Proyecto</th>
+              <th>Ruta</th>
+              <th class="right">Horas</th>
+              <th class="right">Prod.</th>
+              <th class="right">Comb. (L)</th>
+              <th>Serv./Inc.</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for l in logs %}
+              <tr>
+                <td>{{ l.created_at.strftime("%Y-%m-%d") }}</td>
+                <td>
+                  {% if l.project %}{{ l.project.name }}
+                  {% elif l.project_name %}{{ l.project_name }}
+                  {% else %}—
+                  {% endif %}
+                </td>
+                <td>
+                  {% if l.route %}{{ l.route.origin }}–{{ l.route.destination }}
+                  {% else %}—
+                  {% endif %}
+                </td>
+                <td class="right">{{ "%.2f"|format(l.time_total or 0) }}</td>
+                <td class="right">{{ "%.2f"|format(l.time_productive or 0) }}</td>
+                <td class="right">{{ "%.2f"|format(l.fuel_liters or 0) }}</td>
+                <td>
+                  {% if l.has_service_incident %}
+                    <span class="badge orange">{{ l.si_kind or 'S/I' }}</span>
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty"><div class="empty-emoji">🗒️</div><p>Cuando captures actividad, la verás aquí.</p></div>
+    {% endif %}
+  </section>
+</section>
+{% endblock %}
+
+{% block scripts %}
+  <!-- Chart.js sólo cuando se necesita -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  {% if logs %}
+  <script>
+    // Prepara series desde los logs (ordenados del más antiguo al más reciente para la gráfica)
+    const labels = [{% for l in logs|reverse %}"{{ l.created_at.strftime('%Y-%m-%d') }}"{% if not loop.last %},{% endif %}{% endfor %}];
+    const seriesTotal = [{% for l in logs|reverse %}{{ (l.time_total or 0)|float }}{% if not loop.last %},{% endif %}{% endfor %}];
+    const seriesProd  = [{% for l in logs|reverse %}{{ (l.time_productive or 0)|float }}{% if not loop.last %},{% endif %}{% endfor %}];
+
+    const ctx = document.getElementById('trendChart').getContext('2d');
+    const chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          { label: 'Horas totales',   data: seriesTotal, tension: .25, borderWidth: 2, pointRadius: 2 },
+          { label: 'Horas productivas', data: seriesProd, tension: .25, borderWidth: 2, pointRadius: 2 }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: true },
+          tooltip: { enabled: true }
+        },
+        scales: {
+          y: { beginAtZero: true, ticks: { callback: v => v.toFixed ? v.toFixed(0) : v } },
+          x: { ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 10 } }
+        }
+      }
+    });
+  </script>
+  {% endif %}
+{% endblock %}

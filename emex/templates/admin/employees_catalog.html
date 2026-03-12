@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+  :root{--primary:#1e40af; --primary-2:#3b82f6; --bg:#f5f7fb; --card:#fff; --text:#0f172a; --muted:#64748b; --border:#e5e9f2; --shadow:0 12px 30px rgba(2,6,23,.06)}
+  .wrap{min-height:100vh;background:var(--bg);padding:24px}
+  .hero{background:linear-gradient(135deg,var(--primary),var(--primary-2));color:#fff;border-radius:18px;padding:22px 26px;margin-bottom:18px;box-shadow:var(--shadow)}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;box-shadow:var(--shadow)}
+  table{width:100%;border-collapse:collapse}
+  th{font-size:.82rem;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;text-align:left;padding:.7rem;border-bottom:1px solid var(--border)}
+  td{padding:.7rem;border-bottom:1px solid var(--border);vertical-align:middle}
+</style>
+
+<div class="wrap">
+  <div class="hero d-flex justify-content-between align-items-center flex-wrap">
+    <div>
+      <h1 class="h4 mb-1 fw-bold">Catálogo de empleados</h1>
+      <div class="opacity-75">Gestión de personal (nombre, cargo, correo)</div>
+    </div>
+    <div class="d-flex gap-2">
+      <input id="q" value="{{ q or '' }}" class="form-control" placeholder="Buscar...">
+      <a class="btn btn-light" href="{{ url_for('admin.employees') }}">← Dashboard</a>
+      <a class="btn btn-primary" href="{{ url_for('admin.employees_new') }}">+ Agregar</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="table-responsive">
+      <table id="tbl">
+        <thead><tr><th>Nombre</th><th>Cargo</th><th>Correo</th><th>Acciones</th></tr></thead>
+        <tbody>
+          {% for u in users %}
+          <tr>
+            <td>{{ u.name }}</td>
+            <td>{{ u.job_title or '—' }}</td>
+            <td>{{ u.email }}</td>
+            <td>
+              <a class="btn btn-outline-primary btn-sm" href="{{ url_for('admin.employees_edit', user_id=u.id) }}">Editar</a>
+              <button class="btn btn-outline-danger btn-sm" onclick="delEmp({{ u.id }})">Eliminar</button>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="4" class="text-center text-muted">Sin empleados</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+// filtro rápido cliente
+document.getElementById('q')?.addEventListener('input', e=>{
+  const q = e.target.value.toLowerCase();
+  document.querySelectorAll('#tbl tbody tr').forEach(tr=>{
+    tr.style.display = tr.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+});
+
+function delEmp(id){
+  if(!confirm('¿Eliminar este empleado?')) return;
+  fetch(`{{ url_for("admin.api_employees_delete", user_id=0)[:-1] }}${id}`, { method:'DELETE' })
+  .then(r=>r.json())
+  .then(d=>{
+    if(!d.success){
+      alert(d.message || d.error || 'No se pudo eliminar');
+      return;
+    }
+    location.reload();
+  })
+  .catch(()=>alert('Error de red'));
+}
+</script>
+{% endblock %}

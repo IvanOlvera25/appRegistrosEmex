@@ -1,0 +1,1378 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+  /* ========== DASHBOARD PROFESIONAL MODERNO ========== */
+  :root {
+    --primary: #1e40af;
+    --primary-light: #3b82f6;
+    --success: #059669;
+    --warning: #f59e0b;
+    --danger: #dc2626;
+    --info: #0891b2;
+    --dark: #0f172a;
+    --gray: #64748b;
+    --gray-light: #f8fafc;
+    --border: #e2e8f0;
+  }
+
+  /* ========== HEADER DEL DASHBOARD ========== */
+  .dashboard-header {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    border-radius: 20px;
+    padding: 2.5rem 3rem;
+    margin-bottom: 2rem;
+    color: white;
+    box-shadow: 0 10px 40px rgba(30, 64, 175, 0.25);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .dashboard-header::before {
+    content: "";
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.15), transparent 70%);
+    border-radius: 50%;
+  }
+
+  .dashboard-header-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 2rem;
+    flex-wrap: wrap;
+  }
+
+  .dashboard-title-group h1 {
+    font-size: 2.5rem;
+    font-weight: 900;
+    margin: 0 0 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .dashboard-subtitle {
+    font-size: 1.1rem;
+    opacity: 0.93;
+    margin: 0;
+    font-weight: 500;
+  }
+
+  .dashboard-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .btn-header {
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+  }
+
+  .btn-header:hover {
+    background: white;
+    color: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  }
+
+  .btn-header.primary {
+    background: white;
+    color: var(--primary);
+  }
+
+  /* ========== KPI CARDS MEJORADOS ========== */
+  .kpis-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .kpi-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 1.75rem 2rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .kpi-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+  }
+
+  .kpi-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 5px;
+    height: 100%;
+    background: var(--kpi-color, var(--primary));
+  }
+
+  .kpi-card.primary {
+    --kpi-color: linear-gradient(180deg, var(--primary-light), var(--primary));
+  }
+
+  .kpi-card.success {
+    --kpi-color: linear-gradient(180deg, #10b981, var(--success));
+  }
+
+  .kpi-card.warning {
+    --kpi-color: linear-gradient(180deg, #fbbf24, var(--warning));
+  }
+
+  .kpi-card.info {
+    --kpi-color: linear-gradient(180deg, #06b6d4, var(--info));
+  }
+
+  .kpi-card.purple {
+    --kpi-color: linear-gradient(180deg, #a78bfa, #7c3aed);
+  }
+
+  .kpi-card.orange {
+    --kpi-color: linear-gradient(180deg, #fb923c, #f97316);
+  }
+
+  .kpi-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+  }
+
+  .kpi-icon {
+    width: 56px;
+    height: 56px;
+    background: linear-gradient(135deg, var(--primary-light), var(--primary));
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    box-shadow: 0 6px 16px rgba(30, 64, 175, 0.25);
+  }
+
+  .kpi-card.success .kpi-icon {
+    background: linear-gradient(135deg, #10b981, var(--success));
+    box-shadow: 0 6px 16px rgba(5, 150, 105, 0.25);
+  }
+
+  .kpi-card.warning .kpi-icon {
+    background: linear-gradient(135deg, #fbbf24, var(--warning));
+    box-shadow: 0 6px 16px rgba(245, 158, 11, 0.25);
+  }
+
+  .kpi-card.info .kpi-icon {
+    background: linear-gradient(135deg, #06b6d4, var(--info));
+    box-shadow: 0 6px 16px rgba(8, 145, 178, 0.25);
+  }
+
+  .kpi-card.purple .kpi-icon {
+    background: linear-gradient(135deg, #a78bfa, #7c3aed);
+    box-shadow: 0 6px 16px rgba(124, 58, 237, 0.25);
+  }
+
+  .kpi-card.orange .kpi-icon {
+    background: linear-gradient(135deg, #fb923c, #f97316);
+    box-shadow: 0 6px 16px rgba(249, 115, 22, 0.25);
+  }
+
+  .kpi-label {
+    font-size: 0.85rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--gray);
+    margin-bottom: 0.5rem;
+  }
+
+  .kpi-value {
+    font-size: 2.25rem;
+    font-weight: 900;
+    color: var(--dark);
+    line-height: 1.1;
+  }
+
+  .kpi-trend {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.7rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 800;
+    margin-top: 0.75rem;
+  }
+
+  .kpi-trend.up {
+    background: #d1fae5;
+    color: #065f46;
+  }
+
+  .kpi-trend.down {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+
+  /* ========== ESTILOS DE TABLA MEJORADOS ========== */
+  .service-card {
+    background: var(--gray-light);
+    border-radius: 12px;
+    padding: 0.75rem;
+    border: 1px solid var(--border);
+    min-width: 200px;
+  }
+
+  .service-card.purchase {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+  }
+
+  .service-card.servicio {
+    background: #fffbeb;
+    border-color: #fde68a;
+  }
+
+  .service-card.incidencia {
+    background: #fef2f2;
+    border-color: #fecaca;
+  }
+
+  .service-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+  }
+
+  .service-cost {
+    font-weight: 800;
+    color: var(--dark);
+    font-size: 0.95rem;
+  }
+
+  .service-body {
+    font-size: 0.85rem;
+    color: var(--gray);
+  }
+
+  .service-provider {
+    font-weight: 600;
+    color: var(--primary);
+    margin-bottom: 0.25rem;
+  }
+
+  .service-detail {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 180px;
+  }
+
+  .service-subtype {
+    font-weight: 600;
+    color: var(--dark);
+    text-transform: capitalize;
+  }
+
+  /* Badges Soft */
+  .badge.info-soft {
+    background: #dbeafe;
+    color: #1e40af;
+    border: 1px solid #93c5fd;
+  }
+
+  .badge.warning-soft {
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fcd34d;
+  }
+
+  .badge.danger-soft {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fca5a5;
+  }
+
+  /* Fuel Display */
+  .fuel-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #ecfdf5;
+    padding: 0.4rem 0.75rem;
+    border-radius: 999px;
+    border: 1px solid #6ee7b7;
+    width: fit-content;
+  }
+
+  .fuel-icon {
+    font-size: 1rem;
+  }
+
+  .fuel-amount {
+    font-weight: 800;
+    color: #065f46;
+  }
+
+  .fuel-unit {
+    font-size: 0.8rem;
+    color: var(--gray);
+    margin-top: 0.25rem;
+    padding-left: 0.5rem;
+    font-weight: 600;
+  }
+
+  /* Time Stats */
+  .time-stats {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    color: var(--gray);
+  }
+
+  .time-stats .divider {
+    color: var(--border);
+  }
+
+  .time-stats .productive {
+    color: var(--success);
+    font-weight: 800;
+  }
+
+  .btn-icon {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 8px;
+    transition: all 0.2s;
+  }
+
+  .btn-icon:hover {
+    background: #fee2e2;
+    transform: scale(1.1);
+  }
+
+  /* ========== TABS MEJORADOS ========== */
+  .tabs-section {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  }
+
+  .tabs-container {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .tab-button {
+    background: transparent;
+    border: 2px solid transparent;
+    color: var(--gray);
+    padding: 0.75rem 1.5rem;
+    border-radius: 12px;
+    font-weight: 800;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .tab-button:hover {
+    background: var(--gray-light);
+    color: var(--dark);
+  }
+
+  .tab-button.active {
+    background: var(--dark);
+    color: white;
+    border-color: var(--dark);
+  }
+
+  /* ========== FILTROS MODERNOS ========== */
+  .filters-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 2rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    margin-bottom: 1.5rem;
+  }
+
+  .filters-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--border);
+  }
+
+  .filters-title {
+    font-size: 1.2rem;
+    font-weight: 900;
+    color: var(--dark);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .filters-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .filter-group.full {
+    grid-column: 1 / -1;
+  }
+
+  .filter-label {
+    font-weight: 800;
+    font-size: 0.9rem;
+    color: var(--dark);
+  }
+
+  .filter-input,
+  .filter-select {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    font-size: 0.95rem;
+    transition: all 0.2s;
+    background: white;
+  }
+
+  .filter-input:focus,
+  .filter-select:focus {
+    outline: none;
+    border-color: var(--primary-light);
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+  }
+
+  .filters-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .filters-meta {
+    color: var(--gray);
+    font-weight: 700;
+    font-size: 0.95rem;
+  }
+
+  .filters-meta strong {
+    color: var(--dark);
+  }
+
+  .filters-actions {
+    display: flex;
+    gap: 0.75rem;
+  }
+
+  .btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 12px;
+    font-weight: 800;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 2px solid transparent;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--primary), var(--primary-light));
+    color: white;
+    box-shadow: 0 4px 12px rgba(30, 64, 175, 0.25);
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(30, 64, 175, 0.35);
+  }
+
+  .btn-secondary {
+    background: white;
+    border-color: var(--border);
+    color: var(--dark);
+  }
+
+  .btn-secondary:hover {
+    background: var(--gray-light);
+    border-color: var(--gray);
+  }
+
+  .btn-danger {
+    background: linear-gradient(135deg, var(--danger), #ef4444);
+    color: white;
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
+  }
+
+  /* ========== TABLA PROFESIONAL ========== */
+  .table-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  }
+
+  .bulkbar {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.5rem;
+    background: var(--dark);
+    color: white;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .bulkbar.active {
+    display: flex;
+  }
+
+  .bulk-counter {
+    font-weight: 900;
+    font-size: 1.05rem;
+  }
+
+  .bulk-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .btn-ghost {
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    color: white;
+  }
+
+  .btn-ghost:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  .table-wrapper {
+    overflow-x: auto;
+    max-height: 600px;
+  }
+
+  .data-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  .data-table thead th {
+    position: sticky;
+    top: 0;
+    background: #f8fafc;
+    padding: 1rem;
+    text-align: left;
+    font-weight: 800;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--gray);
+    border-bottom: 2px solid var(--border);
+    z-index: 10;
+  }
+
+  .data-table tbody td {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+
+  .data-table tbody tr {
+    transition: all 0.2s;
+  }
+
+  .data-table tbody tr:hover {
+    background: #f9fafb;
+  }
+
+  .data-table tbody tr.selected {
+    background: #eef2ff !important;
+  }
+
+  /* Badges y chips */
+  .type-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 800;
+  }
+
+  .type-badge.operator {
+    background: #dbeafe;
+    color: #1e40af;
+  }
+
+  .type-badge.driver {
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  .type-badge.purchase {
+    background: #f3e8ff;
+    color: #6b21a8;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.65rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 800;
+  }
+
+  .badge.success {
+    background: #d1fae5;
+    color: #065f46;
+  }
+
+  .badge.warning {
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  .badge.dark {
+    background: #1f2937;
+    color: white;
+  }
+
+  .chip {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #475569;
+  }
+
+  /* Empty state */
+  .empty-state {
+    padding: 4rem 2rem;
+    text-align: center;
+  }
+
+  .empty-icon {
+    font-size: 4rem;
+    opacity: 0.4;
+    margin-bottom: 1rem;
+  }
+
+  .empty-title {
+    font-size: 1.5rem;
+    font-weight: 900;
+    color: var(--dark);
+    margin-bottom: 0.5rem;
+  }
+
+  .empty-text {
+    color: var(--gray);
+    font-size: 1rem;
+  }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    display: none;
+    z-index: 200;
+  }
+
+  .modal-overlay.active {
+    display: block;
+  }
+
+  .modal {
+    position: fixed;
+    inset: 0;
+    display: none;
+    place-items: center;
+    z-index: 201;
+  }
+
+  .modal.active {
+    display: grid;
+  }
+
+  .modal-content {
+    width: min(540px, 92vw);
+    background: white;
+    border-radius: 18px;
+    padding: 2rem;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: modalSlideIn 0.3s ease-out;
+  }
+
+  @keyframes modalSlideIn {
+    from {
+      transform: translateY(-50px);
+      opacity: 0;
+    }
+
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+
+  .modal-title {
+    font-size: 1.5rem;
+    font-weight: 900;
+    margin: 0;
+  }
+
+  .modal-close {
+    background: transparent;
+    border: none;
+    font-size: 1.75rem;
+    cursor: pointer;
+    color: var(--gray);
+    line-height: 1;
+    transition: all 0.2s;
+  }
+
+  .modal-close:hover {
+    color: var(--dark);
+  }
+
+  .modal-body {
+    margin-bottom: 1.5rem;
+    color: var(--gray);
+  }
+
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    font-weight: 700;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    z-index: 300;
+    animation: toastSlideIn 0.3s ease-out;
+  }
+
+  @keyframes toastSlideIn {
+    from {
+      transform: translateX(400px);
+      opacity: 0;
+    }
+
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  .toast.success {
+    background: linear-gradient(135deg, var(--success), #10b981);
+    color: white;
+  }
+
+  .toast.error {
+    background: linear-gradient(135deg, var(--danger), #ef4444);
+    color: white;
+  }
+
+  .toast.info {
+    background: linear-gradient(135deg, var(--info), #06b6d4);
+    color: white;
+  }
+
+  /* Responsive */
+  @media (max-width: 968px) {
+    .dashboard-header {
+      padding: 2rem 1.5rem;
+    }
+
+    .dashboard-title-group h1 {
+      font-size: 2rem;
+    }
+
+    .kpis-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .filters-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .filters-footer {
+      flex-direction: column;
+      gap: 1rem;
+      align-items: stretch;
+    }
+
+    .filters-actions {
+      width: 100%;
+    }
+
+    .filters-actions .btn {
+      flex: 1;
+    }
+
+    .table-wrapper {
+      max-height: none;
+    }
+  }
+</style>
+
+<div class="dashboard-container">
+  <!-- Header -->
+  <div class="dashboard-header">
+    <div class="dashboard-header-content">
+      <div class="dashboard-title-group">
+        <h1>📊 Dashboard de Administración</h1>
+        <p class="dashboard-subtitle">Control unificado: operadores, choferes y gestor de compras</p>
+      </div>
+      <div class="dashboard-actions">
+        <button id="btnExport" class="btn-header">
+          <span>📥</span> Exportar CSV
+        </button>
+        <a href="{{ url_for('admin.dashboard') }}" class="btn-header primary">
+          <span>🔄</span> Actualizar
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpis-grid">
+    <div class="kpi-card primary">
+      <div class="kpi-header">
+        <div class="kpi-icon">📋</div>
+      </div>
+      <div class="kpi-label">Registros Totales</div>
+      <div class="kpi-value">{{ stats.total if stats else last_ops|length }}</div>
+    </div>
+
+    <div class="kpi-card warning">
+      <div class="kpi-header">
+        <div class="kpi-icon">🔧</div>
+      </div>
+      <div class="kpi-label">Servicios e Incidencias</div>
+      <div class="kpi-value">{{ stats.si_count if stats else '0' }}</div>
+    </div>
+
+    <div class="kpi-card success">
+      <div class="kpi-header">
+        <div class="kpi-icon">⛽</div>
+      </div>
+      <div class="kpi-label">Combustible (L)</div>
+      <div class="kpi-value">{{ "{:,.1f}".format(stats.fuel_liters) if stats and stats.fuel_liters is not none else
+        '0.0' }}</div>
+    </div>
+
+    <div class="kpi-card purple">
+      <div class="kpi-header">
+        <div class="kpi-icon">🛒</div>
+      </div>
+      <div class="kpi-label">Compras Registradas</div>
+      <div class="kpi-value">{{ stats.purchases_count if stats and stats.purchases_count is defined else '0' }}</div>
+    </div>
+
+    <div class="kpi-card orange">
+      <div class="kpi-header">
+        <div class="kpi-icon">💰</div>
+      </div>
+      <div class="kpi-label">Costo Total Compras</div>
+      <div class="kpi-value">${{ "{:,.0f}".format(stats.purchases_total) if stats and stats.purchases_total is defined
+        else '0' }}</div>
+    </div>
+
+    <div class="kpi-card info">
+      <div class="kpi-header">
+        <div class="kpi-icon">⏰</div>
+      </div>
+      <div class="kpi-label">Horas Extra</div>
+      <div class="kpi-value">{{ "{:.1f}".format(stats.overtime_hours) if stats and stats.overtime_hours is not none else
+        '0.0' }}</div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs-section">
+    <div class="tabs-container">
+      <button class="tab-button active" data-type="">Todos los registros</button>
+      <button class="tab-button" data-type="operator">👷 Operadores</button>
+      <button class="tab-button" data-type="driver">🚚 Choferes</button>
+      <button class="tab-button" data-type="purchase">🛒 Compras</button>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="filters-card">
+    <div class="filters-header">
+      <h3 class="filters-title">
+        <span>🔍</span>
+        Filtros de búsqueda
+      </h3>
+    </div>
+
+    <div class="filters-grid">
+      <div class="filter-group">
+        <label class="filter-label">Desde</label>
+        <input type="date" id="filterFrom" class="filter-input"
+          value="{{ filters.start_date if filters and filters.start_date }}">
+      </div>
+
+      <div class="filter-group">
+        <label class="filter-label">Hasta</label>
+        <input type="date" id="filterTo" class="filter-input"
+          value="{{ filters.end_date if filters and filters.end_date }}">
+      </div>
+
+      <div class="filter-group">
+        <label class="filter-label">Proyecto</label>
+        <select id="filterProject" class="filter-select">
+          <option value="">Todos los proyectos</option>
+          {% for p in projects or [] %}
+          <option value="{{ p.name|lower }}">{{ p.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label class="filter-label">Unidad</label>
+        <select id="filterUnit" class="filter-select">
+          <option value="">Todas las unidades</option>
+          {% for u in units or [] %}
+          <option value="{{ (u.code ~ ' ' ~ (u.description or ''))|lower }}">{{ u.code }} {{ u.description or '' }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label class="filter-label">Tipo S/I</label>
+        <select id="filterSI" class="filter-select">
+          <option value="">Todos</option>
+          <option value="servicio">Servicio</option>
+          <option value="incidencia">Incidencia</option>
+          <option value="compras">Compras</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label class="filter-label">Horas extra</label>
+        <select id="filterOT" class="filter-select">
+          <option value="">Todas</option>
+          <option value="1">Con horas extra</option>
+          <option value="0">Sin horas extra</option>
+        </select>
+      </div>
+
+      <div class="filter-group full">
+        <label class="filter-label">Búsqueda general</label>
+        <input type="search" id="filterSearch" class="filter-input"
+          placeholder="🔍 Buscar por notas, trabajador, ruta, unidad...">
+      </div>
+    </div>
+
+    <div class="filters-footer">
+      <div class="filters-meta">
+        <strong><span id="visibleCount">{{ last_ops|length }}</span></strong> de <strong>{{ last_ops|length }}</strong>
+        resultados
+      </div>
+      <div class="filters-actions">
+        <button id="btnClearFilters" class="btn btn-secondary">Limpiar filtros</button>
+        <button id="btnApplyFilters" class="btn btn-primary">Aplicar filtros</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabla -->
+  <div class="table-card">
+    {% if last_ops|length == 0 %}
+    <div class="empty-state">
+      <div class="empty-icon">📭</div>
+      <h3 class="empty-title">No hay registros disponibles</h3>
+      <p class="empty-text">Ajusta los filtros o agrega nuevos registros desde el módulo de trabajadores</p>
+    </div>
+    {% else %}
+
+    <!-- Barra de acciones masivas -->
+    <div class="bulkbar" id="bulkBar">
+      <div class="bulk-counter">
+        <span id="bulkCount">0</span> seleccionados
+      </div>
+      <div class="bulk-actions">
+        <button class="btn btn-ghost" id="btnSelectVisible">Seleccionar visibles</button>
+        <button class="btn btn-secondary" id="btnClearSelection">Limpiar selección</button>
+        <button class="btn btn-danger" id="btnDeleteSelection">🗑️ Eliminar selección</button>
+      </div>
+    </div>
+
+    <div class="table-wrapper">
+      <table class="data-table" id="dataTable">
+        <thead>
+          <tr>
+            <th style="width: 40px;"><input type="checkbox" id="checkAll" aria-label="Seleccionar todos"></th>
+            <th>Tipo</th>
+            <th>Fecha</th>
+            <th>Proyecto</th>
+            <th>Trabajador</th>
+            <th>Unidad</th>
+            <th>Accesorios</th>
+            <th>Ruta</th>
+            <th>Servicio/Inc.</th>
+            <th>Combustible</th>
+            <th>Tiempos</th>
+            <th>Extra</th>
+            <th>Notas</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in last_ops %}
+          {% set is_driver = (r.route or r.route_other_origin or r.route_other_destination) %}
+          {% set is_purchase = (r.si_subtype == 'compras') %}
+          {% set route_lbl = r.route.label if r.route else ((r.route_other_origin ~ ' ➝ ' ~ r.route_other_destination)
+          if (r.route_other_origin or r.route_other_destination) else '-') %}
+          {% set main_unit = (r.main_unit.code if r.main_unit else (r.si_unit.code if r.si_unit else (r.fuel_unit.code
+          if r.fuel_unit else ''))) %}
+          {% set record_type = 'purchase' if is_purchase else ('driver' if is_driver else 'operator') %}
+          <tr data-id="{{ r.id }}" data-date="{{ r.created_at.strftime('%Y-%m-%d') }}"
+            data-project="{{ (r.project.name if r.project else (r.project_name or ''))|lower }}"
+            data-mainunit="{{ (main_unit or '')|lower }}" data-sikind="{{ (r.si_kind or '')|lower }}"
+            data-sisubtype="{{ (r.si_subtype or '')|lower }}" data-over="{{ 1 if r.overtime else 0 }}"
+            data-worker="{{ (r.worker_name or '')|lower }}" data-route="{{ (route_lbl or '')|lower }}"
+            data-si="{{ 1 if r.has_service_incident else 0 }}" data-fuel="{{ 1 if r.has_fuel else 0 }}"
+            data-kind="{{ record_type }}"
+            data-text="{{ (r.notes or '')|lower }} {{ (route_lbl or '')|lower }} {{ (r.si_subtype or '')|lower }} {{ (main_unit or '')|lower }}">
+            <td><input type="checkbox" class="row-check"></td>
+            <td>
+              {% if is_purchase %}
+              <span class="type-badge purchase">🛒 Compras</span>
+              {% elif is_driver %}
+              <span class="type-badge driver">🚚 Chofer</span>
+              {% else %}
+              <span class="type-badge operator">👷 Operador</span>
+              {% endif %}
+            </td>
+            <td style="white-space: nowrap;">{{ r.created_at.strftime("%Y-%m-%d %H:%M") }}</td>
+            <td>{{ r.project.name if r.project else (r.project_name or '—') }}</td>
+            <td><strong>{{ r.worker_name }}</strong></td>
+            <td>{{ main_unit or '—' }}</td>
+            <td>
+              {% if r.accessories and r.accessories|length %}
+              {% for a in r.accessories %}<span class="chip">{{ a }}</span> {% endfor %}
+              {% else %}—{% endif %}
+            </td>
+            <td style="min-width: 200px;">{{ route_lbl }}</td>
+            <td>
+              {% if r.has_service_incident %}
+              {% if is_purchase %}
+              <!-- VISTA DE COMPRAS -->
+              <div class="service-card purchase">
+                <div class="service-header">
+                  <span class="badge info-soft">🛒 Compra</span>
+                  <span class="service-cost">${{ "{:,.2f}".format(r.si_amount or 0) }}</span>
+                </div>
+                <div class="service-body">
+                  {% if r.notes and 'Proveedor:' in r.notes %}
+                  <div class="service-provider">🏢 {{ r.notes.split('Proveedor:')[1].split('\n')[0] }}</div>
+                  {% endif %}
+                  <div class="service-detail">{{ r.notes.split('\n')[0][:30] if r.notes else 'Sin detalles' }}...</div>
+                </div>
+              </div>
+              {% else %}
+              <!-- VISTA DE SERVICIOS / INCIDENCIAS -->
+              <div class="service-card {{ r.si_kind }}">
+                <div class="service-header">
+                  {% if r.si_kind == 'servicio' %}
+                  <span class="badge warning-soft">🔧 Servicio</span>
+                  {% else %}
+                  <span class="badge danger-soft">⚠️ Incidencia</span>
+                  {% endif %}
+                  <span class="service-cost">${{ "{:,.2f}".format(r.si_amount or 0) }}</span>
+                </div>
+                <div class="service-body">
+                  <div class="service-subtype">{{ r.si_subtype or "General" }}</div>
+                  <div class="service-unit">{{ main_unit or "Sin unidad" }}</div>
+                </div>
+              </div>
+              {% endif %}
+              {% else %}
+              <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if r.has_fuel %}
+              <div class="fuel-badge">
+                <span class="fuel-icon">⛽</span>
+                <span class="fuel-amount">{{ "{:,.1f}".format(r.fuel_liters) }} L</span>
+              </div>
+              <div class="fuel-unit">{{ r.fuel_unit.code if r.fuel_unit else "-" }}</div>
+              {% else %}
+              <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+            <td style="white-space: nowrap;">
+              {% if r.time_total or r.time_productive %}
+              <div class="time-stats">
+                <span title="Total">{{ "{:.1f}".format(r.time_total) if r.time_total else "-" }}h</span>
+                <span class="divider">/</span>
+                <span title="Productivo" class="productive">{{ "{:.1f}".format(r.time_productive) if r.time_productive
+                  else "-" }}h</span>
+              </div>
+              {% else %}—{% endif %}
+            </td>
+            <td>
+              {% if r.overtime %}
+              <span class="badge dark">{{ "{:.1f}".format(r.overtime_hours) }}h</span>
+              {% else %}—{% endif %}
+            </td>
+            <td style="max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
+              title="{{ r.notes or '' }}">
+              {{ (r.notes or "—")[:60] }}
+            </td>
+            <td>
+              <button class="btn btn-icon btn-sm" title="Eliminar" onclick="confirmDelete('{{ r.id }}')">🗑️</button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Modal de confirmación -->
+<div class="modal-overlay" id="modalOverlay"></div>
+<div class="modal" id="confirmModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 class="modal-title">⚠️ Confirmar eliminación</h3>
+      <button class="modal-close" id="modalClose">×</button>
+    </div>
+    <div class="modal-body" id="modalBody">
+      ¿Estás seguro de que deseas eliminar este registro? Esta acción no se puede deshacer.
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="modalCancel">Cancelar</button>
+      <button class="btn btn-danger" id="modalConfirm">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ====== FILTRADO DE REGISTROS ======
+  // CORREGIDO: ID correcto de la tabla es #dataTable
+  const tableRows = document.querySelectorAll('#dataTable tbody tr[data-kind]');
+  const tabButtons = document.querySelectorAll('.tab-button');
+  const visibleCountEl = document.getElementById('visibleCount');
+
+  // Variable para tipo activo
+  let activeType = '';
+
+  // Función para actualizar contadores
+  function updateVisibleCount() {
+    const visible = Array.from(tableRows).filter(row => row.style.display !== 'none').length;
+    if (visibleCountEl) {
+      visibleCountEl.textContent = visible;
+    }
+  }
+
+  // Función de filtrado general
+  function applyFilters() {
+    const searchText = (document.getElementById('filterSearch')?.value || '').toLowerCase();
+    const filterFrom = document.getElementById('filterFrom')?.value || '';
+    const filterTo = document.getElementById('filterTo')?.value || '';
+    const filterProject = (document.getElementById('filterProject')?.value || '').toLowerCase();
+    const filterUnit = (document.getElementById('filterUnit')?.value || '').toLowerCase();
+    const filterSI = (document.getElementById('filterSI')?.value || '').toLowerCase();
+    const filterOT = document.getElementById('filterOT')?.value || '';
+
+    tableRows.forEach(row => {
+      // 1. Filtrar por tipo (tab active)
+      const rowKind = row.getAttribute('data-kind') || '';
+      if (activeType && rowKind !== activeType) {
+        row.style.display = 'none';
+        return;
+      }
+
+      // 2. Filtrar por texto de búsqueda
+      const rowText = row.getAttribute('data-text') || '';
+      if (searchText && !rowText.includes(searchText)) {
+        row.style.display = 'none';
+        return;
+      }
+
+      // 3. Filtrar por fecha
+      const rowDate = row.getAttribute('data-date') || '';
+      if (filterFrom && rowDate < filterFrom) {
+        row.style.display = 'none';
+        return;
+      }
+      if (filterTo && rowDate > filterTo) {
+        row.style.display = 'none';
+        return;
+      }
+
+      // 4. Filtrar por proyecto
+      const rowProject = (row.getAttribute('data-project') || '').toLowerCase();
+      if (filterProject && !rowProject.includes(filterProject)) {
+        row.style.display = 'none';
+        return;
+      }
+
+      // 5. Filtrar por unidad
+      const rowUnit = (row.getAttribute('data-unit') || '').toLowerCase();
+      if (filterUnit && !rowUnit.includes(filterUnit)) {
+        row.style.display = 'none';
+        return;
+      }
+
+      // 6. Filtrar por S/I tipo
+      if (filterSI === 'compras') {
+        if (rowKind !== 'purchase') {
+          row.style.display = 'none';
+          return;
+        }
+      } else if (filterSI) {
+        const rowSI = (row.getAttribute('data-si') || '').toLowerCase();
+        if (rowSI !== filterSI) {
+          row.style.display = 'none';
+          return;
+        }
+      }
+
+      // 7. Filtrar por horas extra
+      if (filterOT) {
+        const rowOT = row.getAttribute('data-ot') || '';
+        if (rowOT !== filterOT) {
+          row.style.display = 'none';
+          return;
+        }
+      }
+
+      // Si pasa todos los filtros, mostrarlo
+      row.style.display = '';
+    });
+
+    updateVisibleCount();
+  }
+
+  // Event listeners para los tabs
+  tabButtons.forEach(btn => {
+    btn.addEventListener('click', function () {
+      // Actualizar clase active
+      tabButtons.forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+
+      // Actualizar tipo activo
+      activeType = this.getAttribute('data-type') || '';
+
+      // Aplicar filtros
+      applyFilters();
+    });
+  });
+
+  // Event listener para el botón "Aplicar filtros"
+  document.getElementById('btnApplyFilters')?.addEventListener('click', applyFilters);
+
+  // Event listener para búsqueda en tiempo real
+  document.getElementById('filterSearch')?.addEventListener('input', function () {
+    // Debounce para no filtrar en cada tecla
+    clearTimeout(this.searchTimeout);
+    this.searchTimeout = setTimeout(applyFilters, 300);
+  });
+
+  // Event listener para limpiar filtros
+  document.getElementById('btnClearFilters')?.addEventListener('click', function () {
+    document.getElementById('filterSearch').value = '';
+    document.getElementById('filterFrom').value = '';
+    document.getElementById('filterTo').value = '';
+    document.getElementById('filterProject').value = '';
+    document.getElementById('filterUnit').value = '';
+    document.getElementById('filterSI').value = '';
+    document.getElementById('filterOT').value = '';
+
+    // Resetear tabs
+    tabButtons.forEach(b => b.classList.remove('active'));
+    tabButtons[0]?.classList.add('active'); // Activar "Todos"
+    activeType = '';
+
+    applyFilters();
+  });
+
+  // Aplicar filtros al cargar la página
+  applyFilters();
+</script>
+
+{% endblock %}

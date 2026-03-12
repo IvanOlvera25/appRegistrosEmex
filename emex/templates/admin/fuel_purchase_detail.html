@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block title %}Detalle de Compra #{{ purchase.id }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">⛽ Detalle de Compra #{{ purchase.id }}</h1>
+        <a href="{{ url_for('admin.fuel_purchases') }}" class="btn btn-secondary">
+            ← Volver al listado
+        </a>
+    </div>
+
+    <div class="row">
+        <!-- Tarjeta de Información General -->
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Información de la Compra</h6>
+                    {% if purchase.status == 'dispersado' %}
+                    <span class="badge bg-success">Completado</span>
+                    {% elif purchase.status == 'parcial' %}
+                    <span class="badge bg-warning text-dark">Parcial</span>
+                    {% else %}
+                    <span class="badge bg-danger">Pendiente</span>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <small class="text-muted d-block">Fecha de Registro</small>
+                        <strong>{{ purchase.created_at.strftime('%d/%m/%Y %H:%M') }}</strong>
+                    </div>
+                    <div class="mb-3">
+                        <small class="text-muted d-block">Proveedor / Notas</small>
+                        <strong>{{ purchase.provider or '—' }}</strong>
+                    </div>
+                    <div class="mb-3">
+                        <small class="text-muted d-block">Registrado por</small>
+                        <strong>{{ purchase.registered_by.name if purchase.registered_by else '—' }}</strong>
+                    </div>
+                    <hr>
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <small class="text-muted d-block">Litros</small>
+                            <span class="h5 font-weight-bold text-dark">{{ "{:,.2f}".format(purchase.liters_bought)
+                                }}</span>
+                        </div>
+                        <div class="col-4">
+                            <small class="text-muted d-block">Precio/L</small>
+                            <span class="h5 font-weight-bold text-dark">${{ "{:,.2f}".format(purchase.price_per_liter)
+                                }}</span>
+                        </div>
+                        <div class="col-4">
+                            <small class="text-muted d-block">Total</small>
+                            <span class="h5 font-weight-bold text-primary">${{ "{:,.2f}".format(purchase.total_cost)
+                                }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tarjeta de Estado de Dispersión -->
+        <div class="col-lg-8 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-info">Estado de Dispersión</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-4 text-center">
+                            <div class="card bg-light border-0 p-3">
+                                <small class="text-muted">Total Comprado</small>
+                                <div class="h3 font-weight-bold text-primary mb-0">{{
+                                    "{:,.2f}".format(purchase.liters_bought) }} L</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <div class="card bg-light border-0 p-3">
+                                <small class="text-muted">Dispersado</small>
+                                <div class="h3 font-weight-bold text-success mb-0">{{
+                                    "{:,.2f}".format(purchase.liters_dispersed or 0) }} L</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <div class="card bg-light border-0 p-3">
+                                <small class="text-muted">Pendiente</small>
+                                <div
+                                    class="h3 font-weight-bold {{ 'text-danger' if purchase.liters_pending > 0.1 else 'text-muted' }} mb-0">
+                                    {{ "{:,.2f}".format(purchase.liters_pending) }} L
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h6 class="font-weight-bold mb-3">Historial de Dispersiones</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Unidad</th>
+                                    <th>Litros</th>
+                                    <th>Costo Asignado</th>
+                                    <th>Proyecto</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for log in dispersions %}
+                                <tr>
+                                    <td>{{ log.created_at.strftime('%d/%m %H:%M') }}</td>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ log.fuel_unit.code }}</span>
+                                        {{ log.fuel_unit.description }}
+                                    </td>
+                                    <td class="font-weight-bold">{{ "{:,.2f}".format(log.fuel_liters) }} L</td>
+                                    <td>${{ "{:,.2f}".format(log.fuel_cost) }}</td>
+                                    <td><small>{{ log.project_display or '—' }}</small></td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">No se han realizado dispersiones aún.
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

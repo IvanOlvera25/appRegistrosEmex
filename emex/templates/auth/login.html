@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% block title %}Iniciar sesión · EMEX{% endblock %}
+
+{% block head_extra %}
+<style>
+  .role-chooser{display:flex;gap:14px;justify-content:center;margin:6px 0 18px}
+  .role-btn{
+    flex:1;max-width:260px;display:flex;align-items:center;justify-content:center;
+    gap:10px;padding:16px 18px;border-radius:16px;border:1px solid var(--line,#e6e6e6);
+    background:#fff;cursor:pointer;transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+    box-shadow:0 1px 2px rgba(0,0,0,.04); font-weight:600;
+  }
+  .role-btn .emoji{font-size:22px}
+  .role-btn.active{border-color:var(--primary,#3b82f6); box-shadow:0 6px 22px rgba(59,130,246,.18)}
+  .role-btn:hover{transform:translateY(-1px)}
+  .form-hidden{display:none}
+  .muted-center{text-align:center;color:var(--muted,#6b7280)}
+  .field.block label{display:block;margin:0 0 6px 2px;font-weight:600;color:#374151}
+  .field.block select{
+    width:100%; padding:12px 14px; border:1px solid #e5e7eb; border-radius:12px; background:#fff;
+    font-size:16px; outline:none;
+  }
+  .field.block select:focus{ border-color:#3b82f6; box-shadow:0 0 0 3px rgba(59,130,246,.15) }
+  .auth-actions.line{display:flex;justify-content:space-between;align-items:center;margin-top:8px}
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="auth-wrap auth-aura">
+  <div class="auth-card pro elevate" style="max-width:720px">
+    <!-- Marca -->
+    <div class="auth-brand center">
+      <span class="auth-logo">🚚</span>
+      <div class="auth-brand-text">
+        <h1 class="auth-title">EMEX</h1>
+        <p class="subtitle muted-center">Iniciar sesión</p>
+      </div>
+    </div>
+
+    <div class="role-chooser" role="tablist" aria-label="Selecciona tipo de acceso">
+      <button id="btnEmp" class="role-btn active" data-target="form-emp" role="tab" aria-selected="true">
+        <span class="emoji">👷</span> Empleado
+      </button>
+      <button id="btnAdm" class="role-btn" data-target="form-adm" role="tab" aria-selected="false">
+        <span class="emoji">🛡️</span> Administrador
+      </button>
+    </div>
+
+    <!-- Login Empleado -->
+    <form method="post" id="form-emp" class="auth-form smart-form" autocomplete="off">
+      <input type="hidden" name="mode" value="employee">
+
+      <div class="field block">
+        <label for="employee_id">Empleado</label>
+        <select id="employee_id" name="employee_id" required>
+          <option value="" disabled selected>Selecciona tu nombre en el catálogo…</option>
+          {% for e in employees %}
+            <option value="{{ e.id }}">{{ e.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="field float with-addon">
+        <input type="password" id="emp_password" name="password" placeholder=" " required>
+        <label for="emp_password">Contraseña</label>
+        <button type="button" class="icon-btn" id="togglePassEmp" aria-label="Mostrar u ocultar contraseña">👁</button>
+      </div>
+
+      <div class="auth-actions line">
+        <label class="remember">
+          <input type="checkbox" name="remember" value="1">
+          <span>Recordarme</span>
+        </label>
+        <a class="forgot" href="{{ url_for('auth.forgot_password') }}">¿Olvidaste tu contraseña?</a>
+      </div>
+
+      <button class="btn auth-submit auth-primary" type="submit">
+        <span class="btn-label">Entrar</span>
+        <span class="btn-spinner" aria-hidden="true"></span>
+      </button>
+    </form>
+
+    <!-- Login Admin -->
+    <form method="post" id="form-adm" class="auth-form smart-form form-hidden" autocomplete="off">
+      <input type="hidden" name="mode" value="admin">
+
+      <div class="field float">
+        <input type="email" id="email" name="email" placeholder=" ">
+        <label for="email">Correo</label>
+      </div>
+
+      <div class="field float with-addon">
+        <input type="password" id="adm_password" name="password" placeholder=" ">
+        <label for="adm_password">Contraseña</label>
+        <button type="button" class="icon-btn" id="togglePassAdm" aria-label="Mostrar u ocultar contraseña">👁</button>
+      </div>
+
+      <div class="auth-actions line">
+        <label class="remember">
+          <input type="checkbox" name="remember" value="1">
+          <span>Recordarme</span>
+        </label>
+        <a class="forgot" href="{{ url_for('auth.forgot_password') }}">¿Olvidaste tu contraseña?</a>
+      </div>
+
+      <button class="btn auth-submit auth-primary" type="submit">
+        <span class="btn-label">Entrar</span>
+        <span class="btn-spinner" aria-hidden="true"></span>
+      </button>
+    </form>
+
+    <p class="muted-center" style="margin-top:14px">
+      ¿No tienes cuenta? <a href="{{ url_for('auth.register') }}">Crear cuenta</a>
+    </p>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Toggle de formularios
+  const btnEmp = document.getElementById('btnEmp');
+  const btnAdm = document.getElementById('btnAdm');
+  const fEmp   = document.getElementById('form-emp');
+  const fAdm   = document.getElementById('form-adm');
+
+  function setFormVisible(which){
+    const empOn = (which === 'emp');
+    fEmp.classList.toggle('form-hidden', !empOn);
+    fAdm.classList.toggle('form-hidden',  empOn);
+    btnEmp.classList.toggle('active', empOn);
+    btnAdm.classList.toggle('active', !empOn);
+    Array.from(fEmp.elements).forEach(el => { if(el.name) el.disabled = !empOn; });
+    Array.from(fAdm.elements).forEach(el => { if(el.name) el.disabled = empOn; });
+  }
+  btnEmp.addEventListener('click', ()=> setFormVisible('emp'));
+  btnAdm.addEventListener('click', ()=> setFormVisible('adm'));
+  setFormVisible('emp'); // por defecto Empleado
+
+  // Mostrar/ocultar contraseña (ambos formularios)
+  function attachToggle(btnId, inputId){
+    const btn = document.getElementById(btnId);
+    const inp = document.getElementById(inputId);
+    if(!btn || !inp) return;
+    btn.addEventListener('click', ()=>{
+      const show = inp.getAttribute('type') === 'password';
+      inp.setAttribute('type', show ? 'text' : 'password');
+      btn.textContent = show ? '🙈' : '👁';
+      inp.focus();
+    });
+  }
+  attachToggle('togglePassEmp','emp_password');
+  attachToggle('togglePassAdm','adm_password');
+</script>
+{% endblock %}

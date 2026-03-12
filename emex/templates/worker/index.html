@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% block content %}
+<!-- Sección de tres botones a pantalla casi completa -->
+<section class="triple-hero full-bleed" aria-label="Accesos rápidos">
+  <a class="triple-button left" href="{{ url_for('worker.operadores') }}" aria-label="Registrar operadores">
+    <div class="triple-content">
+      <div class="icon">👷</div>
+      <h2>Registro de operadores</h2>
+      <p>Bitácora unificada: servicios/incidencias, combustible y tiempos.</p>
+      <span class="cta">Abrir</span>
+    </div>
+  </a>
+
+  <a class="triple-button center" href="{{ url_for('worker.choferes') }}" aria-label="Registrar choferes">
+    <div class="triple-content">
+      <div class="icon">🚚</div>
+      <h2>Registro de choferes</h2>
+      <p>Incluye selección de ruta (origen–destino) o agregar "Otros".</p>
+      <span class="cta">Abrir</span>
+    </div>
+  </a>
+
+  <a class="triple-button right" href="{{ url_for('worker.gestor_compras') }}" aria-label="Gestor de compras">
+    <div class="triple-content">
+      <div class="icon">🛒</div>
+      <h2>Gestor de compras</h2>
+      <p>Registro de compra de diesel, refacciones y servicios externos.</p>
+      <span class="cta">Abrir</span>
+    </div>
+  </a>
+</section>
+
+<style>
+/* Ajustes para triple layout */
+.triple-hero {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  min-height: calc(100vh - 60px);
+  gap: 0;
+}
+
+.triple-button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  text-decoration: none;
+  color: white;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.triple-button.left {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.triple-button.center {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.triple-button.right {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.triple-button:hover {
+  transform: scale(1.02);
+  box-shadow: inset 0 0 100px rgba(255,255,255,0.15);
+}
+
+.triple-content {
+  text-align: center;
+  z-index: 1;
+}
+
+.triple-content .icon {
+  font-size: 5rem;
+  margin-bottom: 1.5rem;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
+}
+
+.triple-content h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.triple-content p {
+  font-size: 1.1rem;
+  opacity: 0.95;
+  margin-bottom: 1.5rem;
+  max-width: 280px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.triple-content .cta {
+  display: inline-block;
+  padding: 0.75rem 2rem;
+  background: rgba(255,255,255,0.2);
+  border: 2px solid rgba(255,255,255,0.8);
+  border-radius: 50px;
+  font-weight: 600;
+  transition: all 0.3s;
+}
+
+.triple-button:hover .cta {
+  background: rgba(255,255,255,0.3);
+  transform: translateY(-2px);
+}
+
+/* Responsive */
+@media (max-width: 968px) {
+  .triple-hero {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+
+  .triple-button {
+    min-height: 40vh;
+  }
+
+  .triple-content .icon {
+    font-size: 4rem;
+  }
+
+  .triple-content h2 {
+    font-size: 1.5rem;
+  }
+}
+</style>
+{% endblock %}

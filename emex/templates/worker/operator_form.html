@@ -1,0 +1,268 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="form-shell">
+  <header class="form-hero">
+    <div class="form-hero-icon">👷</div>
+    <div>
+      <h1 class="title">Registro de operadores</h1>
+      <p class="subtitle">Bitácora unificada de la jornada: servicios/incidencias, combustible y tiempos.</p>
+    </div>
+  </header>
+
+  <form method="post" id="op-form" class="smart-form" enctype="multipart/form-data">
+    <!-- Identidad -->
+    <section class="form-section">
+      <div class="section-header">
+        <h2>Identificación</h2>
+        <span class="pill">Obligatorio</span>
+      </div>
+
+      <!-- Obra / Proyecto -->
+      <div class="inline-field">
+        <label for="op_project_id" class="inline-label">Obra / Proyecto *</label>
+        <select id="op_project_id" name="project_id" required>
+          <option value="">— Selecciona —</option>
+          {% for p in projects %}
+            <option value="{{ p.id }}">{{ p.name }}{% if hasattr(p, 'client') and p.client %} · {{ p.client.name }}{% endif %}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Trabajador -->
+      <div class="inline-field">
+        <label for="op_worker_id" class="inline-label">Trabajador *</label>
+        <select id="op_worker_id" name="worker_id" required>
+          <option value="">— Selecciona —</option>
+          {% for w in workers %}
+            <option value="{{ w.id }}">{{ w.name }}{% if w.job_title %} — {{ w.job_title }}{% endif %}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Unidad + botón Advertencia + estado -->
+      <div class="inline-field">
+        <label for="op_main_unit_id" class="inline-label">Unidad principal</label>
+        <div class="inline-combo">
+          <select id="op_main_unit_id" name="main_unit_id">
+            <option value="">— Selecciona —</option>
+            {% for u in units %}
+              <option value="{{ u.id }}">{{ u.code }} — {{ u.description or u.type or 'Sin descripción' }}</option>
+            {% endfor %}
+          </select>
+          <button type="button" class="btn warn-btn" id="op_warn_btn">Advertencia</button>
+          <span id="op_warn_status" class="chip warn-saved hidden">Advertencia guardada</span>
+        </div>
+      </div>
+
+      <!-- Accesorios -->
+      <div class="inline-field full">
+        <label for="op_accessories" class="inline-label">Accesorios de la unidad (opcional)</label>
+        <select id="op_accessories" name="unit_accessories" class="select-multi" multiple>
+          {% for a in accessories %}<option value="{{ a }}">{{ a }}</option>{% endfor %}
+        </select>
+      </div>
+      <p class="helper-text">Tip: Mantén <strong>Ctrl</strong> (Windows) o <strong>⌘</strong> (Mac) para multiselección.</p>
+    </section>
+
+    <!-- Servicio/Incidencia -->
+    <section class="form-section accent-orange">
+      <div class="section-header">
+        <h2>Servicio / Incidencia</h2>
+        <div class="segmented" role="group" aria-label="Servicio o incidencia">
+          <input type="radio" name="has_si" id="si_no" value="no" checked><label for="si_no">No</label>
+          <input type="radio" name="has_si" id="si_si" value="si"><label for="si_si">Sí</label>
+        </div>
+      </div>
+
+      <div id="si_group" class="section-body hidden">
+        <div class="grid-3">
+          <label><span class="label-line">Tipo</span>
+            <select name="si_kind" id="si_kind">
+              <option value="servicio">Servicio</option><option value="incidencia">Incidencia</option>
+            </select>
+          </label>
+          <label><span class="label-line">¿Qué tipo fue?</span><select name="si_subtype" id="si_subtype"></select></label>
+          <label><span class="label-line">Unidad</span>
+            <select name="si_unit_id">{% for u in units %}<option value="{{ u.id }}">{{ u.code }} — {{ u.description or u.type }}</option>{% endfor %}</select>
+          </label>
+          <label><span class="label-line">Monto (MXN)</span><input type="number" inputmode="decimal" step="0.01" min="0" name="si_amount" placeholder="0.00"></label>
+        </div>
+        <p class="helper-text">Captura esta sección solo si hubo servicio o incidencia durante la jornada.</p>
+      </div>
+    </section>
+
+    <!-- Combustible -->
+    <section class="form-section accent-green">
+      <div class="section-header">
+        <h2>Carga de combustible</h2>
+        <div class="segmented" role="group" aria-label="Combustible">
+          <input type="radio" name="has_fuel" id="fuel_no" value="no" checked><label for="fuel_no">No</label>
+          <input type="radio" name="has_fuel" id="fuel_si" value="si"><label for="fuel_si">Sí</label>
+        </div>
+      </div>
+      <div id="fuel_group" class="section-body hidden">
+        <div class="grid-3">
+          <label><span class="label-line">Hora</span><input type="datetime-local" name="fuel_time" id="fuel_time"></label>
+          <label><span class="label-line">Unidad</span>
+            <select name="fuel_unit_id">{% for u in units %}<option value="{{ u.id }}">{{ u.code }} — {{ u.description or u.type }}</option>{% endfor %}</select>
+          </label>
+          <label><span class="label-line">Total de litros</span><input type="number" inputmode="decimal" step="0.01" min="0" name="fuel_liters" placeholder="Ej. 120.50"></label>
+        </div>
+        <p class="helper-text">Si habilitas esta sección, la hora se auto-rellena con “ahora”.</p>
+      </div>
+    </section>
+
+    <!-- NOTA / TICKET -->
+    <section class="form-section">
+      <div class="section-header"><h2>Nota / Ticket</h2></div>
+      <div class="grid-3">
+        <label><span class="label-line">Número de nota</span><input type="text" name="note_number" placeholder="Ej. A-001239"></label>
+        <label><span class="label-line">Fecha de la nota</span><input type="date" name="note_date" id="op_note_date"></label>
+        <label class="full">
+          <span class="label-line">Foto de la nota (subir o tomar)</span>
+          <input type="file" name="note_photo" id="op_note_photo" accept="image/*" capture="environment">
+          <small class="help note-help">Formatos: JPG/PNG (máx. 5 MB recomendado)</small>
+          <div class="note-preview"><img id="op_note_preview" class="note-photo-preview"></div>
+        </label>
+      </div>
+    </section>
+
+    <!-- Tiempos -->
+    <section class="form-section">
+      <div class="section-header"><h2>Registro de tiempos</h2></div>
+      <div class="grid-3">
+        <label><span class="label-line">Tiempo total (hrs) <span class="req">*</span></span>
+          <input type="number" inputmode="decimal" step="0.25" min="0" name="time_total" required></label>
+        <label><span class="label-line">Tiempo productivo (hrs) <span class="req">*</span></span>
+          <input type="number" inputmode="decimal" step="0.25" min="0" name="time_productive" required></label>
+        <label><span class="label-line">Duración S/I (hrs, si aplica)</span><input type="number" inputmode="decimal" step="0.25" min="0" name="time_si_duration"></label>
+        <label><span class="label-line">Duración combustible (hrs, si aplica)</span><input type="number" inputmode="decimal" step="0.25" min="0" name="time_fuel_duration"></label>
+      </div>
+
+      <label class="full">
+        <span class="label-line">Notas (opcional)</span>
+        <textarea name="notes" rows="3" maxlength="300" placeholder="Comentarios adicionales..."></textarea>
+        <div class="char-meta"><small class="charcount">0/300</small></div>
+      </label>
+    </section>
+
+    <!-- Horas extra -->
+    <section class="form-section">
+      <div class="section-header">
+        <h2>Horas extra</h2>
+        <div class="segmented" role="group" aria-label="Horas extra">
+          <input type="radio" name="overtime" id="ot_no" value="no" checked><label for="ot_no">No</label>
+          <input type="radio" name="overtime" id="ot_si" value="si"><label for="ot_si">Sí</label>
+        </div>
+      </div>
+      <div id="ot_group" class="section-body hidden">
+        <div class="grid-3">
+          <label><span class="label-line">Cantidad de horas</span><input type="number" inputmode="decimal" step="0.25" min="0" name="overtime_hours"></label>
+          <label class="full"><span class="label-line">Razón</span><input type="text" name="overtime_reason" placeholder="Motivo de horas extra"></label>
+        </div>
+      </div>
+    </section>
+
+    <!-- MODAL ADVERTENCIA (INTEGRADO EN EL FORM) -->
+    <input type="hidden" name="warning_enabled" id="op_warning_enabled" value="0">
+    <input type="hidden" name="warning_source" value="operator">
+
+    <div class="warning-overlay" id="op_warn_overlay" style="display:none;"></div>
+    <div class="warning-modal" id="op_warn_modal" style="display:none;">
+      <header>
+        <h2>Guardar advertencia</h2>
+        <button type="button" class="close-btn" data-close="op_warn_modal">×</button>
+      </header>
+
+      <div class="form-grid">
+        <label>Descripción *</label>
+        <textarea id="op_warn_desc" name="warning_description" maxlength="600" placeholder="Describe la advertencia..."></textarea>
+        <div class="char-count" id="op_warn_count">0/600</div>
+
+        <label>Nivel de advertencia</label>
+        <select id="op_warn_level" name="warning_level">
+          <option value="bajo" selected>Bajo</option>
+          <option value="medio">Medio</option>
+          <option value="alto">Alto</option>
+        </select>
+
+        <label>Adjuntar archivo o tomar foto</label>
+        <input id="op_warn_file" type="file" name="warning_attachment" accept="image/*,.pdf,.doc,.docx" capture="environment">
+        <small>Imágenes (JPG/PNG) o PDF/DOC (máx. 10 MB recomendado)</small>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" id="op_warn_save">Guardar advertencia</button>
+        <button type="button" class="cancel-btn" data-close="op_warn_modal">Cancelar</button>
+      </div>
+    </div>
+
+    <div class="sticky-actions">
+      <button class="btn btn-primary" type="submit">Guardar registro</button>
+    </div>
+  </form>
+</section>
+
+<script>
+  // Subtipos
+  const opciones={servicio:["Mantenimiento preventivo","Cambio de aceite","Cambio de filtro","Ajuste general","Lavado"],incidencia:["Desvielación","Llanta ponchada","Fuga de aceite","Falla eléctrica","Sobrecalentamiento"]};
+  const siKind=document.getElementById("si_kind"); const siSubtype=document.getElementById("si_subtype");
+  function fillSubtype(){ siSubtype.innerHTML=""; (opciones[siKind.value]||[]).forEach(t=>{const o=document.createElement("option");o.value=t;o.textContent=t;siSubtype.appendChild(o);}); }
+  if(siKind){ siKind.addEventListener("change", fillSubtype); fillSubtype(); }
+
+  // chips show/hide
+  const show=(el,on)=>el.classList.toggle("hidden",!on);
+  const siGroup=document.getElementById("si_group"), fuelGroup=document.getElementById("fuel_group"), otGroup=document.getElementById("ot_group");
+  document.getElementById("si_no").addEventListener("change",()=>show(siGroup,false));
+  document.getElementById("si_si").addEventListener("change",()=>show(siGroup,true));
+  document.getElementById("fuel_no").addEventListener("change",()=>show(fuelGroup,false));
+  document.getElementById("fuel_si").addEventListener("change",()=>{show(fuelGroup,true);const ft=document.getElementById("fuel_time");if(ft&&!ft.value){const n=new Date(),p=v=>String(v).padStart(2,"0");ft.value=`${n.getFullYear()}-${p(n.getMonth()+1)}-${p(n.getDate())}T${p(n.getHours())}:${p(n.getMinutes())}`;}});
+  document.getElementById("ot_no").addEventListener("change",()=>show(otGroup,false));
+  document.getElementById("ot_si").addEventListener("change",()=>show(otGroup,true));
+
+  // Fecha por default para la nota
+  (function(){const d=document.getElementById('op_note_date');if(d&&!d.value){const n=new Date(),p=v=>String(v).padStart(2,"0");d.value=`${n.getFullYear()}-${p(n.getMonth()+1)}-${p(n.getDate())}`;}})();
+
+  // Preview imagen nota
+  (function(){const input=document.getElementById('op_note_photo');const img=document.getElementById('op_note_preview');if(input&&img){input.addEventListener('change',()=>{const f=input.files?.[0];if(!f){img.style.display='none';return;}const url=URL.createObjectURL(f);img.src=url;img.style.display='block';});}})();
+
+  // -------- Modal Advertencia (Operador) --------
+  const opBtn=document.getElementById('op_warn_btn');
+  const opModal=document.getElementById('op_warn_modal');
+  const opOverlay=document.getElementById('op_warn_overlay');
+  const opSave=document.getElementById('op_warn_save');
+  const opDesc=document.getElementById('op_warn_desc');
+  const opLevel=document.getElementById('op_warn_level');
+  const opStatus=document.getElementById('op_warn_status');
+  const opFlag=document.getElementById('op_warning_enabled');
+  const opCount=document.getElementById('op_warn_count');
+
+  function openOpWarn(){
+    const unit=document.getElementById('op_main_unit_id').value;
+    if(!unit){ alert("Selecciona una unidad para asociar la advertencia."); return; }
+    opModal.style.display='block'; opOverlay.style.display='block';
+  }
+  function closeOpWarn(){
+    opModal.style.display='none'; opOverlay.style.display='none';
+  }
+  opBtn?.addEventListener('click', openOpWarn);
+  opOverlay?.addEventListener('click', closeOpWarn);
+  opModal?.querySelectorAll('[data-close="op_warn_modal"]').forEach(b=> b.addEventListener('click', closeOpWarn));
+  opDesc.addEventListener('input', ()=>{ opCount.textContent=`${opDesc.value.length}/600`; });
+
+  opSave.addEventListener('click', ()=>{
+    if(!opDesc.value.trim()){ alert("La descripción es obligatoria."); return; }
+    // Marca como “guardada” para enviar con el registro
+    opFlag.value = "1";
+    opStatus.textContent = `Advertencia guardada (Nivel ${opLevel.value.charAt(0).toUpperCase()+opLevel.value.slice(1)})`;
+    opStatus.classList.remove('hidden');
+    closeOpWarn();
+  });
+</script>
+
+<style>
+  .inline-combo{display:flex;align-items:center;gap:.5rem}
+  .chip.warn-saved{background:#ecfeff;border:1px solid #a5f3fc;color:#0e7490}
+  .hidden{display:none !important}
+</style>
+{% endblock %}

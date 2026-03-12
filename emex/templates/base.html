@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}EMEX{% endblock %}</title>
+
+  <!-- CSS principal -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+
+  <style>
+    /* ========== NAVBAR PROFESIONAL MODERNA ========== */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --primary: #1e40af;
+      --primary-light: #3b82f6;
+      --dark: #0f172a;
+      --gray: #64748b;
+      --gray-light: #f8fafc;
+      --border: #e2e8f0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: var(--gray-light);
+      color: var(--dark);
+      line-height: 1.6;
+    }
+
+    /* Header profesional */
+    .site-header {
+      background: white;
+      border-bottom: 1px solid var(--border);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .navbar-pro {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 70px;
+      gap: 2rem;
+    }
+
+    /* Brand mejorado */
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .brand:hover {
+      transform: translateX(2px);
+    }
+
+    .logo-badge {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      color: white;
+      padding: 0.6rem 1rem;
+      border-radius: 10px;
+      font-weight: 900;
+      font-size: 1.1rem;
+      letter-spacing: 0.5px;
+      box-shadow: 0 4px 12px rgba(30, 64, 175, 0.25);
+    }
+
+    .brand-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 0.1rem;
+    }
+
+    .brand-title {
+      font-weight: 900;
+      font-size: 1.3rem;
+      color: var(--dark);
+      letter-spacing: -0.02em;
+    }
+
+    .brand-subtitle {
+      font-size: 0.75rem;
+      color: var(--gray);
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+
+    /* Toggle móvil mejorado */
+    .nav-toggle {
+      display: none;
+      flex-direction: column;
+      gap: 5px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+
+    .nav-toggle:hover {
+      background: var(--gray-light);
+    }
+
+    .nav-toggle span {
+      width: 24px;
+      height: 3px;
+      background: var(--dark);
+      border-radius: 3px;
+      transition: all 0.3s;
+    }
+
+    .nav-toggle.active span:nth-child(1) {
+      transform: rotate(45deg) translate(7px, 7px);
+    }
+
+    .nav-toggle.active span:nth-child(2) {
+      opacity: 0;
+    }
+
+    .nav-toggle.active span:nth-child(3) {
+      transform: rotate(-45deg) translate(7px, -7px);
+    }
+
+    /* Menú horizontal profesional */
+    .nav-menu {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      list-style: none;
+      margin: 0;
+    }
+
+    .nav-link {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.65rem 1.2rem;
+      border-radius: 10px;
+      text-decoration: none;
+      color: var(--gray);
+      font-weight: 700;
+      font-size: 0.95rem;
+      transition: all 0.2s;
+      position: relative;
+    }
+
+    .nav-link:hover {
+      color: var(--primary);
+      background: rgba(59, 130, 246, 0.08);
+    }
+
+    .nav-link.is-active {
+      color: var(--primary);
+      background: rgba(59, 130, 246, 0.12);
+    }
+
+    .nav-link.is-active::before {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 1.2rem;
+      right: 1.2rem;
+      height: 3px;
+      background: var(--primary);
+      border-radius: 3px 3px 0 0;
+    }
+
+    .nav-outline {
+      border: 2px solid var(--border);
+      color: var(--dark);
+    }
+
+    .nav-outline:hover {
+      border-color: var(--gray);
+      background: var(--gray-light);
+    }
+
+    .nav-primary {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      color: white;
+      box-shadow: 0 2px 8px rgba(30, 64, 175, 0.2);
+    }
+
+    .nav-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+    }
+
+    /* Container principal */
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+
+    /* Flash messages profesionales */
+    .flash-stack {
+      position: fixed;
+      top: 90px;
+      right: 1.5rem;
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      max-width: 420px;
+    }
+
+    .flash {
+      padding: 1rem 1.25rem;
+      border-radius: 12px;
+      font-weight: 600;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+      animation: slideInRight 0.3s ease-out;
+      backdrop-filter: blur(10px);
+    }
+
+    @keyframes slideInRight {
+      from {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    .flash.success {
+      background: linear-gradient(135deg, #059669, #10b981);
+      color: white;
+    }
+
+    .flash.danger,
+    .flash.error {
+      background: linear-gradient(135deg, #dc2626, #ef4444);
+      color: white;
+    }
+
+    .flash.warning {
+      background: linear-gradient(135deg, #f59e0b, #fbbf24);
+      color: white;
+    }
+
+    .flash.info {
+      background: linear-gradient(135deg, #0891b2, #06b6d4);
+      color: white;
+    }
+
+    /* Footer profesional */
+    .site-footer-min {
+      background: white;
+      border-top: 1px solid var(--border);
+      padding: 2rem 1.5rem;
+      margin-top: 4rem;
+    }
+
+    .footer-min-inner {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .footer-min-left {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .logo-badge.small {
+      padding: 0.4rem 0.8rem;
+      font-size: 0.9rem;
+    }
+
+    .footline {
+      color: var(--gray);
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    .footer-min-right {
+      color: var(--gray);
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    /* Responsive */
+    @media (max-width: 968px) {
+      .nav-toggle {
+        display: flex;
+      }
+
+      .nav-menu {
+        position: fixed;
+        top: 70px;
+        left: 0;
+        right: 0;
+        background: white;
+        flex-direction: column;
+        padding: 1.5rem;
+        gap: 0.75rem;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        transform: translateY(-120%);
+        transition: transform 0.3s;
+        opacity: 0;
+      }
+
+      .nav-menu.active {
+        transform: translateY(0);
+        opacity: 1;
+      }
+
+      .nav-link {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .brand-meta {
+        display: none;
+      }
+
+      .flash-stack {
+        right: 1rem;
+        left: 1rem;
+        max-width: none;
+      }
+
+      .container {
+        padding: 1.5rem 1rem;
+      }
+
+      .footer-min-inner {
+        flex-direction: column;
+        text-align: center;
+      }
+    }
+  </style>
+
+  {% block head_extra %}{% endblock %}
+</head>
+<body>
+  <!-- Header / Navbar -->
+  <header class="site-header">
+    <nav class="navbar-pro" aria-label="Barra de navegación">
+      <a class="brand" href="{{ url_for('worker.index') }}" aria-label="Inicio">
+        <span class="logo-badge">EMEX</span>
+        <span class="brand-meta">
+          <span class="brand-title">EMEX</span>
+          <span class="brand-subtitle">Gestión y control</span>
+        </span>
+      </a>
+
+      <button class="nav-toggle" id="navToggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="navMenu">
+        <span></span><span></span><span></span>
+      </button>
+
+      {% set ep = request.endpoint or '' %}
+      <ul class="nav-menu" id="navMenu">
+        <li>
+          <a class="nav-link {{ 'is-active' if ep.startswith('worker.') }}"
+             href="{{ url_for('worker.index') }}">Registrar actividad</a>
+        </li>
+
+        {% if current_user.is_authenticated %}
+          {% if (current_user.role|default('')|lower) == 'admin' %}
+            <li>
+              <a class="nav-link {{ 'is-active' if ep.startswith('admin.') and not ep.startswith('admin.units') and not ep.startswith('admin.employees') and ep != 'admin.projects' and not ep.startswith('admin.clients') and not ep.startswith('admin.warnings') }}"
+                 href="{{ url_for('admin.dashboard') }}">Dashboard</a>
+            </li>
+            <li>
+              <a class="nav-link {{ 'is-active' if ep == 'admin.projects' }}"
+                 href="{{ url_for('admin.projects') }}">Obras</a>
+            </li>
+            <li>
+              <a class="nav-link {{ 'is-active' if ep.startswith('admin.clients') }}"
+                 href="{{ url_for('admin.clients') }}">Clientes</a>
+            </li>
+            <li>
+              <a class="nav-link {{ 'is-active' if ep.startswith('admin.units') or ep=='admin.units' or ep=='admin.unit_detail' }}"
+                 href="{{ url_for('admin.units') }}">Unidades</a>
+            </li>
+            <li>
+              <a class="nav-link {{ 'is-active' if ep.startswith('admin.employees') }}"
+                 href="{{ url_for('admin.employees') }}">Empleados</a>
+            </li>
+            <li>
+              <a class="nav-link {{ 'is-active' if ep.startswith('admin.warnings') or ep=='admin.warning_detail' }}"
+                 href="{{ url_for('admin.warnings') }}">Advertencias</a>
+            </li>
+          {% else %}
+            <li>
+              <a class="nav-link {{ 'is-active' if ep == 'auth.user_panel' }}"
+                 href="{{ url_for('auth.user_panel') }}">Mi panel</a>
+            </li>
+          {% endif %}
+          <li><a class="nav-link nav-outline" href="{{ url_for('auth.logout') }}">Salir</a></li>
+        {% else %}
+          <li>
+            <a class="nav-link {{ 'is-active' if ep == 'auth.login' }}"
+               href="{{ url_for('auth.login') }}">Ingresar</a>
+          </li>
+          <li>
+            <a class="nav-link nav-primary {{ 'is-active' if ep == 'auth.register' }}"
+               href="{{ url_for('auth.register') }}">Registrarse</a>
+          </li>
+        {% endif %}
+      </ul>
+    </nav>
+  </header>
+
+  <!-- Contenido -->
+  <main class="container">
+    {% with messages = get_flashed_messages(with_categories=True) %}
+      {% if messages %}
+        <div class="flash-stack">
+          {% for cat, msg in messages %}
+            <div class="flash {{ cat }}">{{ msg }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer-min">
+    <div class="footer-min-inner">
+      <div class="footer-min-left">
+        <span class="logo-badge small">EMEX</span>
+        <span class="footline">Eficiencia y control para maquinaria y logística</span>
+      </div>
+      <div class="footer-min-right">© 2025 EMEX · Todos los derechos reservados</div>
+    </div>
+  </footer>
+
+  <script>
+    // Toggle menú móvil
+    const navToggle = document.getElementById('navToggle');
+    const navMenu = document.getElementById('navMenu');
+
+    navToggle?.addEventListener('click', () => {
+      navToggle.classList.toggle('active');
+      navMenu.classList.toggle('active');
+      const expanded = navToggle.getAttribute('aria-expanded') === 'true';
+      navToggle.setAttribute('aria-expanded', !expanded);
+    });
+
+    // Cerrar menú al hacer click en un link
+    document.querySelectorAll('.nav-link').forEach(link => {
+      link.addEventListener('click', () => {
+        navToggle?.classList.remove('active');
+        navMenu?.classList.remove('active');
+        navToggle?.setAttribute('aria-expanded', 'false');
+      });
+    });
+
+    // Auto-dismiss flash messages
+    setTimeout(() => {
+      document.querySelectorAll('.flash').forEach(flash => {
+        flash.style.animation = 'slideOutRight 0.3s ease-out forwards';
+        setTimeout(() => flash.remove(), 300);
+      });
+    }, 5000);
+  </script>
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="page-shell warnings-pro">
+  <!-- Header con filtros y KPIs -->
+  <header class="page-head">
+    <div class="lhs">
+      <h1 class="title">Advertencias</h1>
+      <p class="subtitle">Incidentes y observaciones reportadas por operadores y choferes.</p>
+      <div class="kpi-row">
+        <div class="kpi"><span class="kpi-label">Total</span><span class="kpi-value">{{ kpis.total }}</span></div>
+        <div class="kpi"><span class="kpi-label">Bajo</span><span class="kpi-value">{{ kpis.bajo }}</span></div>
+        <div class="kpi"><span class="kpi-label">Medio</span><span class="kpi-value">{{ kpis.medio }}</span></div>
+        <div class="kpi"><span class="kpi-label">Alto</span><span class="kpi-value">{{ kpis.alto }}</span></div>
+      </div>
+    </div>
+
+    <form method="get" class="filters rhs">
+      <div class="segmented">
+        <input type="radio" id="lv_all"  name="level" value=""      {% if not level %}checked{% endif %}><label for="lv_all">Todos</label>
+        <input type="radio" id="lv_low"  name="level" value="bajo"  {% if level=='bajo' %}checked{% endif %}><label for="lv_low">Bajo</label>
+        <input type="radio" id="lv_med"  name="level" value="medio" {% if level=='medio' %}checked{% endif %}><label for="lv_med">Medio</label>
+        <input type="radio" id="lv_hi"   name="level" value="alto"  {% if level=='alto' %}checked{% endif %}><label for="lv_hi">Alto</label>
+      </div>
+
+      <div class="searchbar">
+        <input type="search" name="q" value="{{ q or '' }}" placeholder="Buscar por descripción o trabajador…">
+        <button class="btn btn-primary" type="submit">Filtrar</button>
+        {% if level or q %}<a class="btn btn-ghost" href="{{ url_for('admin.warnings') }}">Limpiar</a>{% endif %}
+      </div>
+    </form>
+  </header>
+
+  {% if warnings and warnings|length %}
+  <section class="cards">
+    {% for w in warnings %}
+    <details class="warning-card level-{{ w.level or 'bajo' }}">
+      <summary class="wc-summary">
+        <div class="wc-meta">
+          <span class="badge level">{{ (w.level or 'bajo')|capitalize }}</span>
+
+          <div class="meta-item">
+            <span class="meta-label">Trabajador</span>
+            <span class="meta-value">
+              {% if w.worker_user %}{{ w.worker_user.name }}{% elif w.worker_name %}{{ w.worker_name }}{% else %}—{% endif %}
+            </span>
+          </div>
+
+          <div class="meta-item">
+            <span class="meta-label">Unidad</span>
+            <span class="meta-value">
+              {% if w.unit %}{{ w.unit.code }}{% if w.unit.description %} — {{ w.unit.description }}{% endif %}{% else %}—{% endif %}
+            </span>
+          </div>
+
+          <div class="meta-item hide-sm">
+            <span class="meta-label">Proyecto</span>
+            <span class="meta-value">{% if w.project %}{{ w.project.name }}{% else %}—{% endif %}</span>
+          </div>
+
+          <div class="meta-item">
+            <span class="meta-label">Fecha</span>
+            <span class="meta-value">
+              {% set dt = (w.created_at or w.timestamp or w.created_on) %}
+              {{ dt.strftime('%Y-%m-%d') if dt else '—' }} <span class="muted">{{ dt.strftime('%H:%M') if dt else '' }}</span>
+            </span>
+          </div>
+        </div>
+        <span class="carat" aria-hidden="true"></span>
+      </summary>
+
+      <div class="wc-body">
+        <p class="wc-desc">{{ w.description }}</p>
+
+        <div class="wc-attachment">
+          {% if w.attachment_path %}
+            {% set file_url = url_for('static', filename=w.attachment_path) %}
+            {% if w.attachment_mime and 'image/' in w.attachment_mime %}
+              <a class="att-img" href="{{ file_url }}" target="_blank" rel="noopener">
+                <img src="{{ file_url }}" alt="Adjunto">
+              </a>
+            {% else %}
+              <a class="btn btn-file" href="{{ file_url }}" target="_blank" rel="noopener">Abrir adjunto</a>
+              {% if w.attachment_mime %}<span class="muted">({{ w.attachment_mime }})</span>{% endif %}
+            {% endif %}
+          {% else %}
+            <span class="muted">Sin archivo adjunto.</span>
+          {% endif %}
+        </div>
+
+        <footer class="wc-foot">
+          <span class="chip origin">
+            {% if w.source_form == 'operator' %}Operador{% elif w.source_form == 'driver' %}Chofer{% else %}—{% endif %}
+          </span>
+          {% if w.project %}<span class="chip project">{{ w.project.name }}</span>{% endif %}
+          {% if w.unit %}<span class="chip unit">{{ w.unit.code }}</span>{% endif %}
+        </footer>
+      </div>
+    </details>
+    {% endfor %}
+  </section>
+  {% else %}
+    <div class="empty">
+      <div class="empty-illustration">⚠️</div>
+      <p>No hay advertencias registradas con los criterios actuales.</p>
+    </div>
+  {% endif %}
+</section>
+
+<style>
+/* ===== Layout principal ===== */
+.warnings-pro .page-head{display:grid;grid-template-columns:1fr auto;gap:1.25rem;align-items:start;margin-bottom:1rem}
+.warnings-pro .title{margin:0 0 .25rem}.warnings-pro .subtitle{margin:0;color:#6b7280}
+.kpi-row{display:flex;gap:.75rem;margin-top:.75rem;flex-wrap:wrap}
+.kpi{background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:.5rem .75rem;min-width:92px}
+.kpi-label{display:block;font-size:.75rem;color:#6b7280}.kpi-value{font-weight:700;font-size:1.1rem;color:#111827}
+
+/* ===== Filtros ===== */
+.filters{display:flex;flex-direction:column;gap:.6rem;align-items:flex-end}
+.segmented{display:inline-grid;grid-auto-flow:column;gap:.25rem;background:#f3f4f6;border-radius:999px;padding:.25rem}
+.segmented input{display:none}
+.segmented label{padding:.4rem .8rem;border-radius:999px;cursor:pointer;font-weight:600;color:#374151;font-size:.9rem}
+.segmented input:checked+label{background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.06);color:#111827}
+.searchbar{display:flex;gap:.5rem;align-items:center}
+.searchbar input[type="search"]{width:240px;border:1px solid #d1d5db;border-radius:10px;padding:.55rem .75rem;font-size:.95rem}
+.btn{border:1px solid transparent;border-radius:10px;padding:.55rem 1rem;font-weight:700;cursor:pointer}
+.btn-primary{background:linear-gradient(135deg,#2563eb,#4f46e5);color:#fff;box-shadow:0 6px 16px rgba(79,70,229,.25)}
+.btn-primary:hover{filter:brightness(1.03)}
+.btn-ghost{background:#fff;border-color:#e5e7eb;color:#374151}.btn-ghost:hover{background:#f9fafb}
+.btn-file{background:#fff;border-color:#e5e7eb;color:#111827}.btn-file:hover{background:#f3f4f6}
+
+/* ===== Tarjetas (colapsables) ===== */
+.cards{display:grid;grid-template-columns:repeat(12,1fr);gap:1rem}
+.warning-card{grid-column:span 12;background:#fff;border:1px solid #e5e7eb;border-left-width:6px;border-radius:14px;box-shadow:0 2px 10px rgba(17,24,39,.04)}
+.warning-card.level-bajo{border-left-color:#10b981}.warning-card.level-medio{border-left-color:#f59e0b}.warning-card.level-alto{border-left-color:#ef4444}
+
+.wc-summary{display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:1rem;cursor:pointer;list-style:none}
+.wc-summary::-webkit-details-marker{display:none}
+.carat{width:10px;height:10px;border-right:2px solid #9ca3af;border-bottom:2px solid #9ca3af;transform:rotate(-45deg);transition:transform .2s}
+details[open] .carat{transform:rotate(45deg)}
+.wc-meta{display:flex;flex-wrap:wrap;gap:.9rem 1.25rem;align-items:center}
+.badge.level{background:#eef2ff;color:#3730a3;padding:.25rem .6rem;font-weight:700;border-radius:999px;font-size:.8rem}
+.meta-item{display:flex;flex-direction:column}.meta-label{font-size:.72rem;color:#6b7280}.meta-value{font-weight:600;color:#111827}
+.muted{color:#9ca3af;font-weight:500}
+
+.wc-body{padding:0 1rem 1rem;display:grid;grid-template-columns:1fr auto;gap:1rem;align-items:start;border-top:1px dashed #e5e7eb}
+.wc-desc{margin:.8rem 0 0;line-height:1.5;color:#111827}
+.wc-attachment .att-img{display:block;width:220px;max-width:220px;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb}
+.wc-attachment img{display:block;width:100%;height:auto}
+.wc-foot{display:flex;gap:.5rem;flex-wrap:wrap;border-top:1px dashed #e5e7eb;padding-top:.7rem;margin-top:.4rem}
+.chip{background:#f3f4f6;color:#374151;border:1px solid #e5e7eb;border-radius:999px;padding:.2rem .65rem;font-size:.82rem;font-weight:600}
+.chip.unit{background:#ecfeff;border-color:#a5f3fc;color:#0e7490}
+.chip.project{background:#fef9c3;border-color:#fde68a;color:#854d0e}
+.chip.origin{background:#ede9fe;border-color:#c4b5fd;color:#5b21b6}
+
+@media (max-width:1024px){.warnings-pro .page-head{grid-template-columns:1fr}.filters{align-items:flex-start}}
+@media (max-width:720px){.cards{gap:.75rem}.wc-body{grid-template-columns:1fr}.wc-attachment .att-img{width:100%;max-width:100%}.hide-sm{display:none}}
+.empty{text-align:center;padding:3rem 1rem;color:#6b7280}.empty-illustration{font-size:2rem;margin-bottom:.5rem}
+</style>
+
+{% endblock %}

@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+  :root{
+    --primary:#1e40af; --primary-2:#3b82f6; --bg:#f5f7fb; --card:#ffffff;
+    --text:#0f172a; --muted:#64748b; --border:#e5e9f2; --success:#059669; --danger:#dc2626;
+    --ring: rgba(30,64,175,.12);
+  }
+  .page{min-height:100vh;background:var(--bg)}
+  .hero{
+    background:linear-gradient(135deg,var(--primary) 0%,var(--primary-2) 100%);
+    color:#fff;border-radius:20px;padding:26px 30px;margin:22px 0;box-shadow:0 14px 30px rgba(2,6,23,.15)
+  }
+  .crumbs a{color:#dbeafe;text-decoration:none}
+  .crumbs span{opacity:.9}
+  .h-title{font-weight:800}
+
+  .card{
+    background:var(--card); border:1px solid var(--border); border-radius:16px;
+    box-shadow:0 10px 24px rgba(2,6,23,.06); padding:24px
+  }
+  .card .title{font-weight:800;color:var(--text);margin-bottom:4px}
+  .card .subtitle{color:var(--muted)}
+
+  /* Form */
+  .form-grid{display:grid; gap:16px}
+  @media (min-width: 992px){ .form-grid{grid-template-columns:1fr 1fr} }
+  .control{display:flex; flex-direction:column; gap:8px}
+  .label{font-weight:700; color:var(--muted); text-transform:uppercase; font-size:.8rem; letter-spacing:.04em}
+
+  .input, .select{
+    width:100%; padding:14px 14px; border:2px solid var(--border); border-radius:12px;
+    background:#fbfcfe; color:var(--text); font-size:1rem; transition:.15s ease;
+  }
+  .input:focus, .select:focus{
+    border-color:var(--primary); box-shadow:0 0 0 6px var(--ring); outline:0; background:#fff;
+  }
+  .hint{font-size:.85rem;color:var(--muted)}
+
+  /* Buttons */
+  .btn-lg{padding:.75rem 1.2rem; border-radius:12px; font-weight:700}
+  .btn-primary{background:var(--primary); border-color:var(--primary)}
+  .btn-primary:hover{background:#17348e; border-color:#17348e}
+  .btn-ghost{background:#fff; border:2px solid var(--border); color:var(--text)}
+  .btn-ghost:hover{border-color:#cbd5e1}
+
+  /* Side tips */
+  .tip-list{margin:0; padding-left:18px; color:var(--muted)}
+  .tip-list li{margin:.35rem 0}
+  .shadow-soft{box-shadow:0 8px 22px rgba(2,6,23,.08)}
+</style>
+
+<div class="container page py-3">
+  <!-- Encabezado -->
+  <div class="hero">
+    <div class="d-flex justify-content-between align-items-center flex-wrap">
+      <div>
+        <div class="crumbs mb-1">
+          <a href="{{ url_for('admin.dashboard') }}">Dashboard</a> ·
+          <a href="{{ url_for('admin.units') }}">Unidades</a> ·
+          <span>Nueva</span>
+        </div>
+        <h1 class="h4 mb-0 h-title">Registrar nueva unidad</h1>
+        <div class="opacity-75">Alta de equipo en EMEX</div>
+      </div>
+      <div class="mt-3 mt-md-0">
+        <a class="btn btn-light btn-lg" href="{{ url_for('admin.units') }}">← Volver</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <div class="card">
+        <div class="title">Datos principales</div>
+        <div class="subtitle mb-3">Captura la información base para dar de alta la unidad.</div>
+
+        <form id="createForm" onsubmit="submitCreate(event)">
+          <div class="form-grid">
+            <div class="control">
+              <label class="label">Código *</label>
+              <input id="code" class="input" type="text" required placeholder="Ej. EX-001, CMB-101">
+              <div class="hint">Debe ser único.</div>
+            </div>
+
+            <div class="control">
+              <label class="label">Placa</label>
+              <input id="plate" class="input" type="text" placeholder="QRO-001-A">
+            </div>
+
+            <div class="control" style="grid-column:1/-1">
+              <label class="label">Descripción</label>
+              <input id="description" class="input" type="text" placeholder="Excavadora CAT 320, Camión Volteo 14 m³, etc.">
+            </div>
+
+            <div class="control">
+              <label class="label">Tipo</label>
+              <select id="type" class="select">
+                <option value="">(sin especificar)</option>
+                <option value="excavadora">Excavadora</option>
+                <option value="retro">Retro</option>
+                <option value="camion">Camión</option>
+                <option value="tracto">Tracto</option>
+              </select>
+            </div>
+
+            <div class="control">
+              <label class="label">Estatus</label>
+              <select id="status" class="select">
+                <option value="activa" selected>Activa</option>
+                <option value="inactiva">Inactiva</option>
+                <option value="mantenimiento">Mantenimiento</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="formError" class="text-danger mt-3" style="display:none"></div>
+
+          <div class="d-flex gap-2 mt-4">
+            <a href="{{ url_for('admin.units') }}" class="btn btn-ghost btn-lg">Cancelar</a>
+            <button class="btn btn-primary btn-lg" type="submit">Guardar unidad</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card shadow-soft">
+        <div class="title mb-2">Tips de captura</div>
+        <ul class="tip-list">
+          <li>Usa un <strong>código</strong> consistente (prefijos por tipo: EX-, CMB-, RET-, TR-).</li>
+          <li>La <strong>descripción</strong> ayuda a ubicarla rápido en listados y reportes.</li>
+          <li>Puedes dejar el <em>tipo</em> sin especificar y editarlo después.</li>
+        </ul>
+        <hr>
+        <div class="d-grid gap-2">
+          <a class="btn btn-ghost btn-lg" href="{{ url_for('admin.units') }}">Ver catálogo</a>
+          <a class="btn btn-light btn-lg" href="{{ url_for('admin.dashboard') }}">Ir al dashboard</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function submitCreate(e){
+  e.preventDefault();
+  const payload = {
+    code: document.getElementById('code').value.trim(),
+    plate: document.getElementById('plate').value.trim(),
+    description: document.getElementById('description').value.trim(),
+    type: document.getElementById('type').value,
+    status: document.getElementById('status').value
+  };
+  const err = document.getElementById('formError');
+  if(!payload.code){ err.textContent='El código es obligatorio.'; err.style.display='block'; return; }
+
+  fetch('{{ url_for("admin.api_units_create") }}', {
+    method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)
+  })
+  .then(r=>r.json())
+  .then(data=>{
+    if(!data.success) throw new Error(data.error || 'No se pudo crear');
+    window.location.href='{{ url_for("admin.units") }}';
+  })
+  .catch(e=>{ err.textContent=e.message; err.style.display='block'; });
+}
+</script>
+
+{% endblock %}

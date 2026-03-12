@@ -1,0 +1,570 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="form-shell">
+  <header class="form-hero">
+    <div class="form-hero-icon">🚚</div>
+    <div>
+      <h1 class="title">Registro de choferes</h1>
+      <p class="subtitle">Captura de jornada con múltiples viajes, servicios/incidencias, combustible y tiempos.</p>
+    </div>
+  </header>
+
+  <!-- IMPORTANTE: enctype para subir imagen -->
+  <form method="post" id="driver-form" class="smart-form" enctype="multipart/form-data">
+    <!-- Identificación -->
+    <section class="form-section">
+      <div class="section-header">
+        <h2>Identificación</h2>
+        <span class="pill">Obligatorio</span>
+      </div>
+
+      <!-- Obra / Proyecto -->
+      <div class="inline-field">
+        <label for="drv_project_id" class="inline-label">Obra / Proyecto *</label>
+        <select id="drv_project_id" name="project_id" required>
+          <option value="">— Selecciona —</option>
+          {% for p in projects %}
+          <option value="{{ p.id }}">{{ p.name }}{% if hasattr(p, 'client') and p.client %} · {{ p.client.name }}{%
+            endif %}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Trabajador -->
+      <div class="inline-field">
+        <label for="drv_worker_id" class="inline-label">Trabajador *</label>
+        <select id="drv_worker_id" name="worker_id" required>
+          <option value="">— Selecciona —</option>
+          {% for w in workers %}
+          <option value="{{ w.id }}">{{ w.name }}{% if w.job_title %} — {{ w.job_title }}{% endif %}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Unidad principal (opcional) + botón Advertencia -->
+      <div class="inline-field">
+        <label for="drv_main_unit_id" class="inline-label">Unidad principal</label>
+        <div class="inline-combo">
+          <select id="drv_main_unit_id" name="main_unit_id">
+            <option value="">— Selecciona —</option>
+            {% for u in units %}
+            <option value="{{ u.id }}">{{ u.code }} — {{ u.description or u.type or 'Sin descripción' }}</option>
+            {% endfor %}
+          </select>
+          <button type="button" class="btn warn-btn" id="drv_warn_btn">Advertencia</button>
+          <span id="drv_warn_status" class="chip warn-saved hidden">Advertencia guardada</span>
+        </div>
+      </div>
+
+      <!-- Accesorios (opcional) -->
+      <div class="inline-field full">
+        <label for="drv_accessories" class="inline-label">Accesorios de la unidad (opcional)</label>
+        <select id="drv_accessories" name="unit_accessories" class="select-multi" multiple>
+          {% for a in accessories %}<option value="{{ a }}">{{ a }}</option>{% endfor %}
+        </select>
+      </div>
+      <p class="helper-text">Tip: Mantén <strong>Ctrl</strong> (Windows) o <strong>⌘</strong> (Mac) para multiselección.
+      </p>
+    </section>
+
+    <!-- ================== VIAJES MÚLTIPLES ================== -->
+    <section class="form-section">
+      <div class="section-header">
+        <h2>Viajes</h2>
+        <div class="stack">
+          <button type="button" class="btn btn-primary" id="btn_add_trip">Agregar viaje</button>
+          <small class="help">Agrega cada traslado con su unidad, ruta y cantidad de viajes. El total se suma
+            automáticamente.</small>
+        </div>
+      </div>
+
+      <div id="trips_container" class="trips-list">
+        <!-- Las filas se insertan dinámicamente -->
+      </div>
+
+      <!-- Template de fila de viaje -->
+      <template id="tripRowTpl">
+        <div class="trip-row" data-trip>
+          <div class="trip-grid">
+            <label class="trip-field">
+              <span class="label-line">Unidad</span>
+              <select class="trip-unit" name="trip_unit_id[]">
+                <option value="">— Selecciona —</option>
+                {% for u in units %}
+                <option value="{{ u.id }}">{{ u.code }} — {{ u.description or u.type or 'Sin descripción' }}</option>
+                {% endfor %}
+              </select>
+            </label>
+
+            <label class="trip-field">
+              <span class="label-line">Ruta</span>
+              <select class="trip-route" name="trip_route_id[]">
+                <option value="">— Selecciona —</option>
+                {% for r in routes %}
+                <option value="{{ r.id }}">{{ r.label }}</option>
+                {% endfor %}
+                <option value="other">Otros…</option>
+              </select>
+            </label>
+
+            <div class="trip-field other-fields hidden">
+              <div class="grid-2">
+                <label>
+                  <span class="label-line">Origen</span>
+                  <input type="text" class="trip-other-origin" name="trip_other_origin[]" placeholder="Ej. Yarda Este">
+                </label>
+                <label>
+                  <span class="label-line">Destino</span>
+                  <input type="text" class="trip-other-dest" name="trip_other_destination[]"
+                    placeholder="Ej. Obra Poniente">
+                </label>
+              </div>
+              <button type="button" class="btn btn-ghost btn-add-route">Agregar al catálogo</button>
+            </div>
+
+            <label class="trip-field w-compact">
+              <span class="label-line">Cantidad de viajes</span>
+              <input type="number" step="1" min="1" class="trip-count" name="trip_count[]" placeholder="1">
+            </label>
+          </div>
+
+          <div class="trip-actions">
+            <button type="button" class="btn btn-ghost btn-remove-trip">Quitar</button>
+          </div>
+        </div>
+      </template>
+
+      <div class="trip-total">
+        <span>Total de viajes:</span>
+        <strong id="trips_total_count">0</strong>
+      </div>
+
+      <!-- JSON de viajes para backend -->
+      <input type="hidden" name="trips_json" id="trips_json" value="[]">
+    </section>
+
+    <!-- Servicio/Incidencia -->
+    <section class="form-section accent-orange">
+      <div class="section-header">
+        <h2>Servicio / Incidencia</h2>
+        <div class="segmented">
+          <input type="radio" name="has_si" id="si_no" value="no" checked><label for="si_no">No</label>
+          <input type="radio" name="has_si" id="si_si" value="si"><label for="si_si">Sí</label>
+        </div>
+      </div>
+      <div id="si_group" class="section-body hidden">
+        <div class="grid-3">
+          <label>
+            <span class="label-line">Tipo</span>
+            <select name="si_kind" id="si_kind">
+              <option value="servicio">Servicio</option>
+              <option value="incidencia">Incidencia</option>
+            </select>
+          </label>
+          <label>
+            <span class="label-line">¿Qué tipo fue?</span>
+            <select name="si_subtype" id="si_subtype"></select>
+          </label>
+          <label>
+            <span class="label-line">Unidad</span>
+            <select name="si_unit_id">
+              {% for u in units %}<option value="{{ u.id }}">{{ u.code }} — {{ u.description or u.type }}</option>{%
+              endfor %}
+            </select>
+          </label>
+          <label>
+            <span class="label-line">Monto (MXN)</span>
+            <input type="number" inputmode="decimal" step="0.01" min="0" name="si_amount" placeholder="0.00">
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <!-- Combustible -->
+    <section class="form-section accent-green">
+      <div class="section-header">
+        <h2>Carga de combustible</h2>
+        <div class="segmented">
+          <input type="radio" name="has_fuel" id="fuel_no" value="no" checked><label for="fuel_no">No</label>
+          <input type="radio" name="has_fuel" id="fuel_si" value="si"><label for="fuel_si">Sí</label>
+        </div>
+      </div>
+      <div id="fuel_group" class="section-body hidden">
+        <div class="grid-3">
+          <label>
+            <span class="label-line">Hora</span>
+            <input type="datetime-local" name="fuel_time" id="fuel_time">
+          </label>
+          <label>
+            <span class="label-line">Unidad</span>
+            <select name="fuel_unit_id">
+              {% for u in units %}<option value="{{ u.id }}">{{ u.code }} — {{ u.description or u.type }}</option>{%
+              endfor %}
+            </select>
+          </label>
+          <label>
+            <span class="label-line">Total de litros</span>
+            <input type="number" inputmode="decimal" step="0.01" min="0" name="fuel_liters" placeholder="Ej. 120.50">
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <!-- NOTA / TICKET -->
+    <section class="form-section">
+      <div class="section-header">
+        <h2>Nota / Ticket</h2>
+      </div>
+      <div class="grid-3">
+        <label>
+          <span class="label-line">Número de nota</span>
+          <input type="text" name="note_number" placeholder="Ej. A-001239">
+        </label>
+        <label>
+          <span class="label-line">Fecha de la nota</span>
+          <input type="date" name="note_date" id="drv_note_date">
+        </label>
+        <label class="full">
+          <span class="label-line">Foto de la nota (subir o tomar)</span>
+          <input type="file" name="note_photo" id="drv_note_photo" accept="image/*" capture="environment">
+          <small class="help note-help">Formatos: JPG/PNG (máx. 5 MB recomendado)</small>
+          <div class="note-preview"><img id="drv_note_preview" class="note-photo-preview"></div>
+        </label>
+      </div>
+    </section>
+
+    <!-- Tiempos + extras -->
+    <section class="form-section">
+      <div class="section-header">
+        <h2>Registro de tiempos</h2>
+      </div>
+      <div class="grid-3">
+        <label>
+          <span class="label-line">Tiempo total (hrs) <span class="req">*</span></span>
+          <input id="time_total" readonly title="Se calcula automáticamente con la suma de viajes" type="number"
+            inputmode="decimal" step="0.25" min="0" name="time_total" required>
+        </label>
+        <label>
+          <span class="label-line">Tiempo productivo (hrs) <span class="req">*</span></span>
+          <input type="number" inputmode="decimal" step="0.25" min="0" name="time_productive" required>
+        </label>
+        <label>
+          <span class="label-line">Duración S/I (hrs, si aplica)</span>
+          <input type="number" inputmode="decimal" step="0.25" min="0" name="time_si_duration">
+        </label>
+        <label>
+          <span class="label-line">Duración combustible (hrs, si aplica)</span>
+          <input type="number" inputmode="decimal" step="0.25" min="0" name="time_fuel_duration">
+        </label>
+      </div>
+
+      <label class="full">
+        <span class="label-line">Notas (opcional)</span>
+        <textarea name="notes" rows="3" maxlength="300" placeholder="Comentarios adicionales..."></textarea>
+        <div class="char-meta"><small class="charcount">0/300</small></div>
+      </label>
+    </section>
+
+    <!-- MODAL ADVERTENCIA (INTEGRADO) -->
+    <input type="hidden" name="warning_enabled" id="drv_warning_enabled" value="0">
+    <input type="hidden" name="warning_source" value="driver">
+
+    <div class="warning-overlay" id="drv_warn_overlay" style="display:none;"></div>
+    <div class="warning-modal" id="drv_warn_modal" style="display:none;">
+      <header>
+        <h2>Guardar advertencia</h2>
+        <button type="button" class="close-btn" data-close="drv_warn_modal">×</button>
+      </header>
+
+      <div class="form-grid">
+        <label>Descripción *</label>
+        <textarea id="drv_warn_desc" name="warning_description" maxlength="600"
+          placeholder="Describe la advertencia..."></textarea>
+        <div class="char-count" id="drv_warn_count">0/600</div>
+
+        <label>Nivel de advertencia</label>
+        <select id="drv_warn_level" name="warning_level">
+          <option value="bajo" selected>Bajo</option>
+          <option value="medio">Medio</option>
+          <option value="alto">Alto</option>
+        </select>
+
+        <label>Adjuntar archivo o tomar foto</label>
+        <input id="drv_warn_file" type="file" name="warning_attachment" accept="image/*,.pdf,.doc,.docx"
+          capture="environment">
+        <small>Imágenes (JPG/PNG) o PDF/DOC (máx. 10 MB recomendado)</small>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" id="drv_warn_save">Guardar advertencia</button>
+        <button type="button" class="cancel-btn" data-close="drv_warn_modal">Cancelar</button>
+      </div>
+    </div>
+
+    <div class="sticky-actions">
+      <button class="btn btn-primary" type="submit">Guardar registro</button>
+    </div>
+  </form>
+</section>
+
+<script>
+  // ====== Subtipos S/I ======
+  const options = { servicio: ["Mantenimiento preventivo", "Cambio de aceite", "Cambio de filtro", "Ajuste general", "Lavado"], incidencia: ["Desvielación", "Llanta ponchada", "Fuga de aceite", "Falla eléctrica", "Sobrecalentamiento"] };
+  const kind = document.getElementById("si_kind"); const subtype = document.getElementById("si_subtype");
+  function fill() { subtype.innerHTML = ""; (options[kind.value] || []).forEach(t => { const o = document.createElement("option"); o.value = t; o.textContent = t; subtype.appendChild(o); }); }
+  if (kind) { kind.addEventListener("change", fill); fill(); }
+
+  // ====== Mostrar/ocultar secciones ======
+  const show = (el, on) => el.classList.toggle("hidden", !on);
+  const siGroup = document.getElementById("si_group"), fuelGroup = document.getElementById("fuel_group");
+  document.getElementById("si_no").addEventListener("change", () => show(siGroup, false));
+  document.getElementById("si_si").addEventListener("change", () => show(siGroup, true));
+  document.getElementById("fuel_no").addEventListener("change", () => show(fuelGroup, false));
+  document.getElementById("fuel_si").addEventListener("change", () => {
+    show(fuelGroup, true);
+    const ft = document.getElementById("fuel_time");
+    if (ft && !ft.value) {
+      const n = new Date(), p = v => String(v).padStart(2, "0");
+      ft.value = `${n.getFullYear()}-${p(n.getMonth() + 1)}-${p(n.getDate())}T${p(n.getHours())}:${p(n.getMinutes())}`;
+    }
+  });
+
+  // ====== Nota fecha + preview ======
+  (function () { const d = document.getElementById('drv_note_date'); if (d && !d.value) { const n = new Date(), p = v => String(v).padStart(2, "0"); d.value = `${n.getFullYear()}-${p(n.getMonth() + 1)}-${p(n.getDate())}`; } })();
+  (function () { const input = document.getElementById('drv_note_photo'); const img = document.getElementById('drv_note_preview'); if (input && img) { input.addEventListener('change', () => { const f = input.files?.[0]; if (!f) { img.style.display = 'none'; return; } const url = URL.createObjectURL(f); img.src = url; img.style.display = 'block'; }); } })();
+
+  // ====== VIAJES: lógica ======
+  const tripsContainer = document.getElementById('trips_container');
+  const tripTpl = document.getElementById('tripRowTpl');
+  const btnAddTrip = document.getElementById('btn_add_trip');
+  const tripsTotal = document.getElementById('trips_total_count');
+  const tripsJson = document.getElementById('trips_json');
+
+  // añade una fila de viaje
+  function addTripRow(prefill = null) {
+    const node = tripTpl.content.cloneNode(true);
+    const row = node.querySelector('[data-trip]');
+    const unitSel = node.querySelector('.trip-unit');
+    const routeSel = node.querySelector('.trip-route');
+    const otherWrap = node.querySelector('.other-fields');
+    const otherO = node.querySelector('.trip-other-origin');
+    const otherD = node.querySelector('.trip-other-dest');
+    const countInp = node.querySelector('.trip-count');
+
+    // prellenar si se manda objeto
+    if (prefill) {
+      if (prefill.unit_id) unitSel.value = String(prefill.unit_id);
+      if (prefill.route_id) routeSel.value = String(prefill.route_id);
+      if (prefill.route_id === 'other' || prefill.other_origin || prefill.other_destination) {
+        otherWrap.classList.remove('hidden');
+        if (prefill.other_origin) otherO.value = prefill.other_origin;
+        if (prefill.other_destination) otherD.value = prefill.other_destination;
+        routeSel.value = 'other';
+      }
+      if (prefill.count) { countInp.value = prefill.count; }
+    }
+
+    tripsContainer.appendChild(node);
+    recalcTotal();
+  }
+
+  // escucha cambios de cantidad para recalcular
+  function recalcTotal() {
+    let sum = 0;
+    tripsContainer.querySelectorAll('.trip-count').forEach(inp => {
+      const v = parseInt(inp.value);
+      if (!isNaN(v)) sum += v;
+    });
+    tripsTotal.textContent = sum;
+  }
+
+  btnAddTrip.addEventListener('click', () => addTripRow({}));
+
+  // delegación de eventos en la lista
+  tripsContainer.addEventListener('input', e => {
+    if (e.target.classList.contains('trip-count')) recalcTotal();
+  });
+
+  tripsContainer.addEventListener('change', async (e) => {
+    const row = e.target.closest('[data-trip]');
+    if (!row) return;
+
+    // Mostrar campos "Otros…" por fila
+    if (e.target.classList.contains('trip-route')) {
+      const val = e.target.value;
+      const otherWrap = row.querySelector('.other-fields');
+      otherWrap.classList.toggle('hidden', val !== 'other');
+    }
+  });
+
+  // Quitar fila
+  tripsContainer.addEventListener('click', e => {
+    if (e.target.classList.contains('btn-remove-trip')) {
+      const row = e.target.closest('[data-trip]');
+      row?.remove(); recalcTotal();
+    }
+  });
+
+  // Agregar al catálogo (por fila)
+  tripsContainer.addEventListener('click', async e => {
+    if (!e.target.classList.contains('btn-add-route')) return;
+    const row = e.target.closest('[data-trip]');
+    const origin = row.querySelector('.trip-other-origin').value.trim();
+    const dest = row.querySelector('.trip-other-dest').value.trim();
+    if (!origin || !dest) { alert("Origen y destino son requeridos."); return; }
+    try {
+      const res = await fetch("{{ url_for('worker.add_route') }}", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ origin, destination: dest })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        const sel = row.querySelector('.trip-route');
+        const opt = document.createElement('option');
+        opt.value = data.id; opt.textContent = data.label;
+        // Insertar antes de "Otros…"
+        const otherOpt = [...sel.options].find(o => o.value === 'other');
+        sel.add(opt, otherOpt);
+        sel.value = String(data.id);
+        // ocultar campos "otros"
+        row.querySelector('.other-fields').classList.add('hidden');
+        row.querySelector('.trip-other-origin').value = '';
+        row.querySelector('.trip-other-dest').value = '';
+        alert("Ruta agregada al catálogo.");
+      } else {
+        alert(data.error || "No se pudo agregar la ruta.");
+      }
+    } catch (err) { alert("Error de red al agregar ruta."); }
+  });
+
+  // construir trips_json al enviar
+  document.getElementById('driver-form').addEventListener('submit', () => {
+    const trips = [];
+    tripsContainer.querySelectorAll('[data-trip]').forEach(row => {
+      const unit = row.querySelector('.trip-unit').value || null;
+      const route = row.querySelector('.trip-route').value || null;
+      const otherO = row.querySelector('.trip-other-origin').value.trim();
+      const otherD = row.querySelector('.trip-other-dest').value.trim();
+      const cnt = parseInt(row.querySelector('.trip-count').value || "1") || 1;
+      trips.push({
+        unit_id: unit ? Number(unit) : null,
+        route_id: (route && route !== 'other') ? Number(route) : (route === 'other' ? 'other' : null),
+        other_origin: otherO || null,
+        other_destination: otherD || null,
+        count: cnt
+      });
+    });
+    tripsJson.value = JSON.stringify(trips);
+    // aseguramos sincronía del total
+    recalcTotal();
+  });
+
+  // ====== Modal Advertencia (igual que antes) ======
+  const drvBtn = document.getElementById('drv_warn_btn');
+  const drvModal = document.getElementById('drv_warn_modal');
+  const drvOverlay = document.getElementById('drv_warn_overlay');
+  const drvSave = document.getElementById('drv_warn_save');
+  const drvDesc = document.getElementById('drv_warn_desc');
+  const drvLevel = document.getElementById('drv_warn_level');
+  const drvStatus = document.getElementById('drv_warn_status');
+  const drvFlag = document.getElementById('drv_warning_enabled');
+  const drvCount = document.getElementById('drv_warn_count');
+
+  function openDrvWarn() {
+    // Basta con que exista al menos una fila de viaje para asociar
+    if (!tripsContainer.querySelector('[data-trip]')) { alert("Agrega al menos un viaje antes de la advertencia."); return; }
+    drvModal.style.display = 'block'; drvOverlay.style.display = 'block';
+  }
+  function closeDrvWarn() { drvModal.style.display = 'none'; drvOverlay.style.display = 'none'; }
+
+  drvBtn?.addEventListener('click', openDrvWarn);
+  drvOverlay?.addEventListener('click', closeDrvWarn);
+  drvModal?.querySelectorAll('[data-close="drv_warn_modal"]').forEach(b => b.addEventListener('click', closeDrvWarn));
+  drvDesc.addEventListener('input', () => { drvCount.textContent = `${drvDesc.value.length}/600`; });
+
+  drvSave.addEventListener('click', () => {
+    if (!drvDesc.value.trim()) { alert("La descripción es obligatoria."); return; }
+    drvFlag.value = "1";
+    drvStatus.textContent = `Advertencia guardada (Nivel ${drvLevel.value.charAt(0).toUpperCase() + drvLevel.value.slice(1)})`;
+    drvStatus.classList.remove('hidden');
+    closeDrvWarn();
+  });
+</script>
+
+<style>
+  .inline-combo {
+    display: flex;
+    align-items: center;
+    gap: .5rem
+  }
+
+  .chip.warn-saved {
+    background: #ecfeff;
+    border: 1px solid #a5f3fc;
+    color: #0e7490
+  }
+
+  .hidden {
+    display: none !important
+  }
+
+  /* Viajes */
+  .trips-list {
+    display: flex;
+    flex-direction: column;
+    gap: .75rem
+  }
+
+  .trip-row {
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: .75rem;
+    background: #fff
+  }
+
+  .trip-grid {
+    display: grid;
+    grid-template-columns: 2fr 3fr 3fr 1fr;
+    gap: .75rem;
+    align-items: end
+  }
+
+  .trip-field .label-line {
+    display: block;
+    margin-bottom: .25rem;
+    color: #6b7280;
+    font-size: .85rem
+  }
+
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .5rem
+  }
+
+  .w-compact input {
+    min-width: 110px
+  }
+
+  .trip-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: .5rem
+  }
+
+  .trip-total {
+    display: flex;
+    gap: .4rem;
+    align-items: baseline;
+    justify-content: flex-end;
+    margin-top: .4rem;
+    font-size: 1rem
+  }
+
+  @media (max-width:900px) {
+    .trip-grid {
+      grid-template-columns: 1fr
+    }
+  }
+</style>
+{% endblock %}

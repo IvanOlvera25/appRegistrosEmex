@@ -1,0 +1,1859 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+  :root {
+    --primary: #1e40af;
+    --primary-2: #3b82f6;
+    --success: #059669;
+    --danger: #dc2626;
+    --warn: #f59e0b;
+    --bg: #f8fafc;
+    --card: #fff;
+    --border: #e2e8f0;
+    --text: #0f172a;
+    --muted: #64748b;
+    --shadow-sm: 0 1px 3px rgba(2, 6, 23, .08);
+    --shadow-md: 0 10px 30px rgba(2, 6, 23, .1);
+  }
+
+  .units-container {
+    min-height: 100vh;
+    background: var(--bg);
+    padding: 2rem
+  }
+
+  /* Header */
+  .page-header {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-2) 100%);
+    color: #fff;
+    border-radius: 16px;
+    padding: 28px 36px;
+    margin-bottom: 1.5rem;
+    box-shadow: var(--shadow-md);
+    position: relative;
+    overflow: hidden
+  }
+
+  .page-header::before {
+    content: "";
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(255, 255, 255, .15), transparent 70%);
+    border-radius: 50%
+  }
+
+  .page-title {
+    font-size: 2.2rem;
+    font-weight: 900;
+    margin: 0 0 .3rem;
+    position: relative;
+    z-index: 1
+  }
+
+  .page-subtitle {
+    opacity: .92;
+    margin: 0;
+    font-size: 1.05rem;
+    position: relative;
+    z-index: 1
+  }
+
+  .btn-light {
+    background: #fff;
+    color: #0f172a;
+    border: 1px solid rgba(255, 255, 255, .35);
+    border-radius: 10px;
+    padding: 10px 16px;
+    text-decoration: none;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    transition: .2s
+  }
+
+  .btn-light:hover {
+    background: #f8fafc;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, .15)
+  }
+
+  /* Section head */
+  .section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 4px 0 12px;
+    flex-wrap: wrap
+  }
+
+  .section-title {
+    margin: 0;
+    font-weight: 900;
+    letter-spacing: .2px;
+    font-size: 1.3rem;
+    color: var(--text)
+  }
+
+  .pill-btn {
+    padding: 10px 18px;
+    border-radius: 999px;
+    font-weight: 800;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    text-decoration: none
+  }
+
+  /* KPIs */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 14px;
+    margin-bottom: 16px
+  }
+
+  .kpi-card {
+    position: relative;
+    background: linear-gradient(180deg, #ffffff, #fbfbfe);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 18px 20px;
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+    min-height: 130px;
+    transition: .3s
+  }
+
+  .kpi-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px)
+  }
+
+  .kpi-card::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: 16px;
+    pointer-events: none;
+    background:
+      radial-gradient(380px 160px at 115% -20%, rgba(59, 130, 246, .12), transparent 60%),
+      radial-gradient(320px 140px at -20% 120%, rgba(30, 64, 175, .10), transparent 60%);
+  }
+
+  .kpi-accent {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 6px;
+    border-radius: 16px 0 0 16px;
+    background: linear-gradient(180deg, var(--primary-2), var(--primary))
+  }
+
+  .kpi-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 6px
+  }
+
+  .kpi-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--primary-2), var(--primary));
+    color: #fff;
+    font-size: 1.4rem;
+    box-shadow: 0 8px 20px rgba(30, 64, 175, .3)
+  }
+
+  .kpi-label {
+    color: var(--muted);
+    font-size: .82rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    margin-top: 4px
+  }
+
+  .kpi-value {
+    font-size: 1.7rem;
+    font-weight: 900;
+    color: var(--text);
+    line-height: 1.1;
+    margin-top: 6px
+  }
+
+  .kpi-delta {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: 999px;
+    font-size: .8rem;
+    font-weight: 800;
+    background: #ecfdf5;
+    color: #065f46;
+    border: 1px solid #bbf7d0
+  }
+
+  .kpi-delta.down {
+    background: #fee2e2;
+    color: #991b1b;
+    border-color: #fecaca
+  }
+
+  /* Selector de unidades */
+  .unit-selector-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 1.3rem 1.5rem;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 16px
+  }
+
+  .unit-search {
+    width: 100%;
+    padding: .85rem 1.1rem;
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    font-size: 1.05rem;
+    margin: .8rem 0 1.2rem;
+    transition: .2s
+  }
+
+  .unit-search:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(30, 64, 175, .12)
+  }
+
+  .units-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 14px;
+    max-height: 480px;
+    overflow: auto;
+    padding-right: 4px
+  }
+
+  .unit-card {
+    position: relative;
+    background: var(--bg);
+    border: 2px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 18px;
+    padding-right: 190px;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    cursor: pointer;
+    transition: .25s
+  }
+
+  .unit-card:hover {
+    background: #fff;
+    border-color: var(--primary);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px)
+  }
+
+  .unit-actions {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: nowrap;
+  }
+
+  .unit-actions .btn {
+    height: 36px;
+    padding: 8px 12px;
+    line-height: 1;
+    border-radius: 10px;
+    white-space: nowrap;
+    font-size: .88rem
+  }
+
+  .unit-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #fde68a, #f59e0b);
+    font-size: 1.4rem;
+    color: #1f2937;
+    box-shadow: 0 6px 14px rgba(245, 158, 11, .3)
+  }
+
+  .unit-info h4 {
+    margin: 0;
+    font-weight: 900;
+    color: var(--text);
+    line-height: 1.2;
+    font-size: 1.1rem
+  }
+
+  .unit-info p {
+    margin: 6px 0 0;
+    color: var(--muted);
+    max-width: 46ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: .95rem
+  }
+
+  /* Detalle */
+  .detail-section {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 1.3rem 1.5rem;
+    box-shadow: var(--shadow-sm)
+  }
+
+  .detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: .9rem;
+    border-bottom: 2px solid var(--border);
+    margin-bottom: 1.2rem;
+    flex-wrap: wrap;
+    gap: 1rem
+  }
+
+  .detail-title {
+    font-size: 1.6rem;
+    font-weight: 900;
+    color: var(--text);
+    margin: 0
+  }
+
+  .detail-subtitle {
+    color: var(--muted);
+    font-size: .95rem;
+    margin: .3rem 0 0
+  }
+
+  .period-tabs {
+    display: inline-flex;
+    gap: .5rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: .3rem
+  }
+
+  .period-tab {
+    padding: .55rem 1.2rem;
+    border: none;
+    border-radius: 10px;
+    background: transparent;
+    font-weight: 800;
+    cursor: pointer;
+    transition: .2s;
+    font-size: .9rem
+  }
+
+  .period-tab:hover {
+    background: #f1f5f9
+  }
+
+  .period-tab.active {
+    background: #fff;
+    color: var(--primary);
+    box-shadow: var(--shadow-sm)
+  }
+
+  /* Rank list */
+  .rank-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 1.3rem 1.5rem;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 16px
+  }
+
+  .rank-title {
+    margin: 0 0 .8rem 0;
+    font-size: 1.2rem;
+    font-weight: 900;
+    color: var(--text)
+  }
+
+  .rank-list {
+    display: grid;
+    gap: 12px
+  }
+
+  .rank-row {
+    display: grid;
+    grid-template-columns: 36px 1fr 120px;
+    align-items: center;
+    gap: 12px
+  }
+
+  .rank-num {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    font-weight: 900;
+    color: #111827;
+    background: #eef2ff;
+    border: 1px solid #c7d2fe;
+    font-size: .95rem
+  }
+
+  .rank-label {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: 700;
+    color: var(--text)
+  }
+
+  .rank-bar {
+    position: relative;
+    height: 12px;
+    background: #eef2f7;
+    border-radius: 999px;
+    overflow: hidden;
+    margin-top: 5px
+  }
+
+  .rank-fill {
+    position: absolute;
+    inset: 0 100% 0 0;
+    background: linear-gradient(90deg, var(--primary-2), var(--primary));
+    transition: inset .4s
+  }
+
+  .rank-value {
+    font-weight: 900;
+    text-align: right;
+    font-size: 1.05rem
+  }
+
+  /* Tabla pro */
+  .table-wrap {
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    background: #fff;
+    box-shadow: var(--shadow-sm);
+    max-height: 600px;
+    overflow-y: auto
+  }
+
+  .records-table {
+    width: 100%;
+    border-collapse: collapse
+  }
+
+  .records-table thead th {
+    position: sticky;
+    top: 0;
+    background: #f8fafc;
+    padding: 1rem;
+    text-align: left;
+    font-weight: 800;
+    color: #475569;
+    font-size: .85rem;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    border-bottom: 2px solid var(--border);
+    z-index: 10
+  }
+
+  .records-table td {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+    font-size: .95rem
+  }
+
+  .records-table tbody tr:nth-child(odd) {
+    background: #fcfcff
+  }
+
+  .records-table tbody tr:hover {
+    background: #f8fafc
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: .25rem .7rem;
+    border-radius: 8px;
+    font-size: .8rem;
+    font-weight: 800
+  }
+
+  .badge.fuel {
+    background: #dbeafe;
+    color: #1e40af;
+    border: 1px solid #93c5fd
+  }
+
+  .badge.service {
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fde68a
+  }
+
+  .badge.incident {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fecaca
+  }
+
+  .badge.purchase {
+    background: #f3e8ff;
+    color: #6b21a8;
+    border: 1px solid #d8b4fe
+  }
+
+  .sale-status {
+    display: inline-flex;
+    align-items: center;
+    padding: .3rem .75rem;
+    border-radius: 8px;
+    font-size: .9rem;
+    font-weight: 800
+  }
+
+  .sale-status.complete {
+    background: #d1fae5;
+    color: #065f46;
+    border: 1px solid #a7f3d0
+  }
+
+  .sale-input {
+    display: flex;
+    align-items: center;
+    gap: .6rem
+  }
+
+  .sale-input input {
+    width: 140px;
+    padding: .5rem .7rem;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    font-size: .95rem
+  }
+
+  .sale-input input:focus {
+    outline: none;
+    border-color: var(--primary-2);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, .1)
+  }
+
+  .sale-input button {
+    padding: .5rem .8rem;
+    background: var(--success);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: .95rem;
+    cursor: pointer;
+    font-weight: 800;
+    transition: .2s
+  }
+
+  .sale-input button:hover {
+    opacity: .9;
+    transform: translateY(-1px)
+  }
+
+  .utility-value {
+    font-weight: 900;
+    font-size: 1.05rem
+  }
+
+  .utility-value.positive {
+    color: var(--success)
+  }
+
+  .utility-value.negative {
+    color: var(--danger)
+  }
+
+  /* Resumen estadístico PRO */
+  .stats-pro {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 18px;
+    box-shadow: var(--shadow-sm)
+  }
+
+  .stats-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px
+  }
+
+  .stats-title {
+    margin: 0;
+    font-weight: 900;
+    font-size: 1.15rem
+  }
+
+  .radial {
+    --p: 0;
+    width: 190px;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: conic-gradient(var(--success) calc(var(--p)*1%), #e5e7eb 0);
+    display: grid;
+    place-items: center;
+    margin: auto;
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, .06)
+  }
+
+  .radial.negative {
+    background: conic-gradient(var(--danger) calc(var(--p)*1%), #e5e7eb 0);
+  }
+
+  .radial .inner {
+    width: 74%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: #fff;
+    display: grid;
+    place-items: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, .08);
+  }
+
+  .radial .big {
+    font-weight: 900;
+    font-size: 1.7rem;
+    color: var(--text)
+  }
+
+  .radial small {
+    color: #64748b;
+    font-weight: 700
+  }
+
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px
+  }
+
+  .metric {
+    display: grid;
+    grid-template-columns: 48px 1fr;
+    gap: 12px;
+    align-items: center;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 12px 14px;
+    background: linear-gradient(180deg, #fff, #fbfbff);
+    transition: .2s
+  }
+
+  .metric:hover {
+    box-shadow: var(--shadow-sm);
+    transform: translateY(-2px)
+  }
+
+  .metric .ico {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    color: #111827;
+    background: #eef2ff;
+    border: 1px solid #c7d2fe;
+    font-size: 1.2rem;
+    font-weight: 900
+  }
+
+  .metric .label {
+    color: var(--muted);
+    font-size: .85rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .03em
+  }
+
+  .metric .value {
+    font-weight: 900;
+    font-size: 1.3rem
+  }
+
+  .metric .hint {
+    color: #6b7280;
+    font-size: .82rem;
+    margin-top: 2px
+  }
+
+  .dualbar {
+    margin-top: 10px;
+    border: 1px dashed #e5e7eb;
+    border-radius: 12px;
+    padding: 12px
+  }
+
+  .dualbar-bars {
+    display: flex;
+    height: 12px;
+    border-radius: 999px;
+    overflow: hidden;
+    background: #f1f5f9;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, .1)
+  }
+
+  .dualbar .bar {
+    height: 100%;
+    transition: width .4s
+  }
+
+  .dualbar .sales {
+    background: linear-gradient(90deg, #3b82f6, #1e40af)
+  }
+
+  .dualbar .costs {
+    background: linear-gradient(90deg, #fca5a5, #ef4444)
+  }
+
+  .dualbar-legend {
+    display: flex;
+    justify-content: space-between;
+    font-size: .85rem;
+    color: #475569;
+    margin-top: 8px;
+    font-weight: 700
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px
+  }
+
+  .dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, .15)
+  }
+
+  .dot.sales {
+    background: #3b82f6
+  }
+
+  .dot.costs {
+    background: #ef4444
+  }
+
+  .linbar {
+    margin-top: 12px
+  }
+
+  .linbar .track {
+    height: 12px;
+    border-radius: 999px;
+    background: #f1f5f9;
+    overflow: hidden;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, .1)
+  }
+
+  .linbar .fill {
+    height: 100%;
+    background: linear-gradient(90deg, #10b981, #16a34a);
+    transition: width .4s
+  }
+
+  /* Accesorios (catálogo) */
+  .acc-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 1.2rem 1.5rem;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 18px
+  }
+
+  .acc-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: .8rem;
+    flex-wrap: wrap;
+    gap: .8rem
+  }
+
+  .acc-hint {
+    color: var(--muted);
+    font-size: .95rem;
+    max-width: 60ch
+  }
+
+  .acc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 14px
+  }
+
+  .acc-col {
+    border: 1px dashed var(--border);
+    border-radius: 14px;
+    padding: 1rem;
+    background: linear-gradient(180deg, #fff, #fbfbff)
+  }
+
+  .acc-col-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: .8rem
+  }
+
+  .acc-col-title {
+    font-weight: 900;
+    font-size: 1.05rem
+  }
+
+  .acc-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: .6rem
+  }
+
+  .acc-item {
+    display: inline-flex;
+    align-items: center;
+    gap: .6rem;
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: .4rem .75rem;
+    transition: .2s
+  }
+
+  .acc-item:hover {
+    background: #fff;
+    box-shadow: var(--shadow-sm)
+  }
+
+  .acc-name {
+    font-weight: 700;
+    font-size: .9rem
+  }
+
+  .acc-actions {
+    display: flex;
+    gap: .4rem
+  }
+
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: .35rem .6rem;
+    cursor: pointer;
+    font-size: .82rem;
+    font-weight: 700;
+    transition: .2s
+  }
+
+  .btn-ghost:hover {
+    background: #f8fafc
+  }
+
+  .btn-danger {
+    background: var(--danger);
+    border: none;
+    color: #fff;
+    border-radius: 8px;
+    padding: .35rem .6rem;
+    cursor: pointer;
+    font-size: .82rem;
+    font-weight: 800;
+    transition: .2s
+  }
+
+  .btn-danger:hover {
+    opacity: .9;
+    transform: translateY(-1px)
+  }
+
+  .btn-primary {
+    background: var(--primary-2);
+    border: none;
+    color: #fff;
+    border-radius: 12px;
+    padding: .6rem 1rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: .2s;
+    font-size: .95rem
+  }
+
+  .btn-primary:hover {
+    opacity: .95;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(30, 64, 175, .25)
+  }
+
+  .btn-outline-primary {
+    background: #fff;
+    border: 1px solid var(--primary-2);
+    color: var(--primary-2);
+    border-radius: 10px;
+    padding: .55rem .9rem;
+    font-weight: 800;
+    transition: .2s
+  }
+
+  .btn-outline-primary:hover {
+    background: var(--primary-2);
+    color: #fff
+  }
+
+  .btn-outline-secondary {
+    background: #fff;
+    border: 1px solid var(--border);
+    color: #111827;
+    border-radius: 10px;
+    padding: .55rem .9rem;
+    font-weight: 800;
+    transition: .2s
+  }
+
+  .btn-outline-secondary:hover {
+    background: #f8fafc
+  }
+
+  .btn-sm {
+    padding: .4rem .65rem;
+    font-size: .88rem;
+    border-radius: 10px
+  }
+
+  /* Pro modal */
+  .pro-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, .5);
+    backdrop-filter: blur(3px);
+    display: none;
+    z-index: 1000
+  }
+
+  .pro-modal {
+    position: fixed;
+    inset: 0;
+    display: none;
+    place-items: center;
+    z-index: 1001
+  }
+
+  .pro-card {
+    width: min(540px, 92vw);
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, .25);
+    padding: 1.3rem
+  }
+
+  .pro-card header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: .9rem
+  }
+
+  .pro-card h3 {
+    margin: 0;
+    font-weight: 900;
+    font-size: 1.3rem
+  }
+
+  .pro-card .close {
+    background: transparent;
+    border: none;
+    font-size: 1.6rem;
+    line-height: 1;
+    cursor: pointer;
+    color: #334155;
+    transition: .2s
+  }
+
+  .pro-card .close:hover {
+    color: #111827
+  }
+
+  .pro-card label {
+    display: block;
+    font-weight: 800;
+    color: #334155;
+    margin: .5rem 0 .3rem;
+    font-size: .95rem
+  }
+
+  .pro-card input[type="text"] {
+    width: 100%;
+    padding: .7rem .85rem;
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    font-size: 1rem
+  }
+
+  .pro-card input[type="text"]:focus {
+    outline: none;
+    border-color: var(--primary-2);
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, .15)
+  }
+
+  .pro-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: .7rem;
+    margin-top: 1rem
+  }
+
+  .hidden {
+    display: none !important
+  }
+
+  /* Chart */
+  .chart-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 18px;
+    box-shadow: var(--shadow-sm)
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .units-container {
+      padding: 1rem
+    }
+
+    .page-header {
+      padding: 20px 24px
+    }
+
+    .page-title {
+      font-size: 1.7rem
+    }
+
+    .kpi-grid {
+      grid-template-columns: 1fr
+    }
+
+    .units-grid {
+      grid-template-columns: 1fr
+    }
+
+    .unit-card {
+      padding-right: 18px
+    }
+
+    .unit-actions {
+      position: static;
+      display: flex;
+      gap: .5rem;
+      margin-top: .8rem;
+      width: 100%
+    }
+
+    .unit-actions .btn {
+      flex: 1
+    }
+
+    .metrics-grid {
+      grid-template-columns: 1fr
+    }
+
+    .acc-grid {
+      grid-template-columns: 1fr
+    }
+  }
+</style>
+
+<div class="units-container">
+  <!-- Header -->
+  <div class="page-header">
+    <h1 class="page-title">🚛 Centro de Control de Unidades</h1>
+    <p class="page-subtitle">Análisis integral de rendimiento, productividad y gestión de compras</p>
+    <a href="{{ url_for('admin.dashboard') }}" class="btn btn-light mt-3">← Volver al Dashboard</a>
+  </div>
+
+  {% if not unit %}
+  <!-- ===== Vista general -->
+  <div id="generalView">
+    <!-- KPIs -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <span class="kpi-accent"></span>
+        <div class="kpi-top">
+          <div class="kpi-icon">🚛</div>
+        </div>
+        <div class="kpi-label">Total Unidades</div>
+        <div class="kpi-value">{{ kpis.units }}</div>
+      </div>
+
+      <div class="kpi-card">
+        <span class="kpi-accent"></span>
+        <div class="kpi-top">
+          <div class="kpi-icon">⛽</div>
+        </div>
+        <div class="kpi-label">Consumo Mensual</div>
+        <div class="kpi-value">{{ "{:,.0f}".format(kpis.liters_month) }} L</div>
+      </div>
+
+      <div class="kpi-card">
+        <span class="kpi-accent"></span>
+        <div class="kpi-top">
+          <div class="kpi-icon">💰</div>
+        </div>
+        <div class="kpi-label">Costo Combustible</div>
+        <div class="kpi-value">${{ "{:,.2f}".format(kpis.diesel_cost_month) }}</div>
+      </div>
+
+      <div class="kpi-card">
+        <span class="kpi-accent"></span>
+        <div class="kpi-top">
+          <div class="kpi-icon">🔧</div>
+        </div>
+        <div class="kpi-label">Servicios e Incidencias</div>
+        <div class="kpi-value">{{ kpis.si_inc_month }}</div>
+      </div>
+    </div>
+
+    <!-- Selector + buscador -->
+    <div class="unit-selector-card">
+      <div class="section-head">
+        <h3 class="section-title">📦 Unidades Registradas</h3>
+        <a class="btn btn-primary pill-btn" href="{{ url_for('admin.units_new') }}">+ Agregar unidad</a>
+      </div>
+      <input id="unitSearch" class="unit-search" type="search"
+        placeholder="🔍 Buscar por código, placa o descripción...">
+      <div class="units-grid" id="unitsGrid">
+        {% for u in all_units %}
+        <div class="unit-card" onclick="window.location.href='{{ url_for('admin.unit_detail', unit_id=u.id) }}'">
+          <div class="unit-icon">🚛</div>
+          <div class="unit-info">
+            <h4>{{ u.code }}{% if u.plate %} • {{ u.plate }}{% endif %}</h4>
+            <p>{{ u.description or 'Sin descripción' }}</p>
+          </div>
+          <div class="unit-actions">
+            <a class="btn btn-outline-primary btn-sm" href="{{ url_for('admin.units_edit', unit_id=u.id) }}"
+              onclick="event.stopPropagation();">✏️ Editar</a>
+            <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('admin.unit_detail', unit_id=u.id) }}"
+              onclick="event.stopPropagation();">📊 Detalle</a>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Catálogo de Accesorios -->
+    <div class="acc-card" id="accCatalog">
+      <div class="acc-header">
+        <div>
+          <h3 class="section-title">🔧 Catálogo de Accesorios</h3>
+          <p class="acc-hint">Define los accesorios disponibles en los formularios. Los de <strong>choferes</strong> y
+            <strong>operadores</strong> son distintos.
+          </p>
+        </div>
+      </div>
+
+      <div class="acc-grid">
+        <!-- Operadores -->
+        <div class="acc-col">
+          <div class="acc-col-head">
+            <span class="acc-col-title">👷 Operadores</span>
+            <button class="btn btn-primary btn-sm" id="btnAddAccOperator">+ Agregar</button>
+          </div>
+          <ul class="acc-list" id="accListOperator"></ul>
+        </div>
+
+        <!-- Choferes -->
+        <div class="acc-col">
+          <div class="acc-col-head">
+            <span class="acc-col-title">🚚 Choferes</span>
+            <button class="btn btn-primary btn-sm" id="btnAddAccDriver">+ Agregar</button>
+          </div>
+          <ul class="acc-list" id="accListDriver"></ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rankings -->
+    <div class="row g-3">
+      <div class="col-md-6">
+        <div class="rank-card">
+          <h3 class="rank-title">🏆 Top 5 · Consumo de combustible</h3>
+          <div class="rank-list">
+            {% for item in top_fuel %}
+            {% set pct = (item.liters * 100 / (top_fuel[0].liters or 1)) if top_fuel else 0 %}
+            <div class="rank-row">
+              <div class="rank-num">{{ loop.index }}</div>
+              <div>
+                <div class="rank-label">{{ item.unit.code }}</div>
+                <div class="rank-bar"><span class="rank-fill" style="inset:0 {{ 100 - pct }}% 0 0"></span></div>
+              </div>
+              <div class="rank-value text-primary">{{ "{:,.0f}".format(item.liters) }} L</div>
+            </div>
+            {% endfor %}
+            {% if not top_fuel or top_fuel|length == 0 %}
+            <div class="text-muted" style="padding:1rem;text-align:center">Sin datos para el período</div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="rank-card">
+          <h3 class="rank-title">⚠️ Top 5 · Servicios e incidencias</h3>
+          <div class="rank-list">
+            {% for item in top_siinc %}
+            {% set pct2 = (item.count * 100 / (top_siinc[0].count or 1)) if top_siinc else 0 %}
+            <div class="rank-row">
+              <div class="rank-num">{{ loop.index }}</div>
+              <div>
+                <div class="rank-label">{{ item.unit.code }}</div>
+                <div class="rank-bar"><span class="rank-fill"
+                    style="inset:0 {{ 100 - pct2 }}% 0 0; background:linear-gradient(90deg,#fbbf24,#f59e0b)"></span>
+                </div>
+              </div>
+              <div class="rank-value" style="color:#a16207">{{ item.count }}</div>
+            </div>
+            {% endfor %}
+            {% if not top_siinc or top_siinc|length == 0 %}
+            <div class="text-muted" style="padding:1rem;text-align:center">Sin datos para el período</div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if unit %}
+  <!-- ===== Vista detalle -->
+  <div id="detailView">
+    <div class="detail-section">
+      <div class="detail-header">
+        <div>
+          <h2 class="detail-title">{{ unit.code }} {% if unit.plate %}• {{ unit.plate }}{% endif %}</h2>
+          <p class="detail-subtitle">{{ unit.description or 'Sin descripción' }}</p>
+        </div>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+          <div class="period-tabs me-2">
+            <button class="period-tab active" onclick="changePeriod('week', this)">Semanal</button>
+            <button class="period-tab" onclick="changePeriod('month', this)">Mensual</button>
+          </div>
+          <a class="btn btn-outline-primary btn-sm" href="{{ url_for('admin.units_edit', unit_id=unit.id) }}">✏️
+            Editar</a>
+          <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('admin.units') }}">← Volver</a>
+        </div>
+      </div>
+
+      <!-- KPIs unidad -->
+      <div class="kpi-grid mb-3">
+        <div class="kpi-card">
+          <span class="kpi-accent"></span>
+          <div class="kpi-top">
+            <div class="kpi-icon">⛽</div>
+          </div>
+          <div class="kpi-label">Consumo Total</div>
+          <div class="kpi-value" id="totalFuel">{{ "{:,.1f}".format(detail.liters_week or 0) }} L</div>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-accent"></span>
+          <div class="kpi-top">
+            <div class="kpi-icon">💵</div>
+          </div>
+          <div class="kpi-label">Costo Combustible</div>
+          <div class="kpi-value" id="fuelCost">${{ "{:,.2f}".format((detail.liters_week or 0) * 28.5) }}</div>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-accent"></span>
+          <div class="kpi-top">
+            <div class="kpi-icon">🔧</div>
+          </div>
+          <div class="kpi-label">Servicios</div>
+          <div class="kpi-value" id="servicesCount">{{ detail.servicios or 0 }}</div>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-accent"></span>
+          <div class="kpi-top">
+            <div class="kpi-icon">⚠️</div>
+          </div>
+          <div class="kpi-label">Incidencias</div>
+          <div class="kpi-value" id="incidentsCount">{{ detail.incidencias or 0 }}</div>
+        </div>
+      </div>
+
+      <!-- Gráfico + Resumen -->
+      <div class="row g-3">
+        <div class="col-lg-7">
+          <div class="chart-card">
+            <h4 class="stats-title mb-3">📈 Tendencia de consumo</h4>
+            <div style="height:340px"><canvas id="fuelChart"></canvas></div>
+          </div>
+        </div>
+
+        <div class="col-lg-5">
+          {% set tSales = detail.total_sales or 0.0 %}
+          {% set tCosts = detail.total_costs or 0.0 %}
+          {% set tUtil = detail.total_utility if detail.total_utility is not none else (tSales - tCosts) %}
+          {% set marginV = detail.margin if detail.margin is not none else ( (tSales>0) and (tUtil/tSales*100) or 0.0 )
+          %}
+          {% set effV = detail.efficiency or 0.0 %}
+          {% set totalSC = (tSales + tCosts) %}
+          {% set sPct = (tSales*100/totalSC) if totalSC>0 else 50 %}
+          {% set cPct = 100 - sPct %}
+          {% set neg = marginV < 0 %} <div class="stats-pro">
+            <div class="stats-head">
+              <h4 class="stats-title">📊 Resumen estadístico</h4>
+            </div>
+
+            <div class="row g-3">
+              <div class="col-5 d-flex align-items-center">
+                <div class="radial {{ 'negative' if neg else '' }}" id="gaugeMargin"
+                  style="--p: {{ (marginV|float)|round(1) if marginV>0 else (marginV|abs if marginV<0 else 0) }}">
+                  <div class="inner">
+                    <div class="text-center">
+                      <div class="big" id="lblMargin">{{ "{:.1f}".format(marginV) }}%</div>
+                      <small>Margen</small>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-7">
+                <div class="metrics-grid">
+                  <div class="metric">
+                    <div class="ico">💳</div>
+                    <div>
+                      <div class="label">Total Ventas</div>
+                      <div class="value text-primary" id="mSales">${{ "{:,.2f}".format(tSales) }}</div>
+                      <div class="hint"><span id="lblSalesPct">{{ "{:.0f}".format(sPct) }}</span>%</div>
+                    </div>
+                  </div>
+                  <div class="metric">
+                    <div class="ico">💸</div>
+                    <div>
+                      <div class="label">Total Costos</div>
+                      <div class="value text-danger" id="mCosts">${{ "{:,.2f}".format(tCosts) }}</div>
+                      <div class="hint"><span id="lblCostsPct">{{ "{:.0f}".format(cPct) }}</span>%</div>
+                    </div>
+                  </div>
+                  <div class="metric">
+                    <div class="ico">📈</div>
+                    <div>
+                      <div class="label">Utilidad Neta</div>
+                      <div class="value {{ 'text-success' if tUtil>=0 else 'text-danger' }}" id="mUtility">${{
+                        "{:,.2f}".format(tUtil) }}</div>
+                      <div class="hint">Balance</div>
+                    </div>
+                  </div>
+                  <div class="metric">
+                    <div class="ico">⏳</div>
+                    <div>
+                      <div class="label">Pendientes</div>
+                      <div class="value" style="color:#a16207" id="mPending">{{ detail.pending_records or 0 }}</div>
+                      <div class="hint">Sin venta</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="dualbar">
+              <div class="dualbar-bars">
+                <div class="bar sales" id="barSales" style="width:{{ sPct }}%"></div>
+                <div class="bar costs" id="barCosts" style="width:{{ cPct }}%"></div>
+              </div>
+              <div class="dualbar-legend">
+                <span class="legend-item"><span class="dot sales"></span>Ventas</span>
+                <span class="legend-item"><span class="dot costs"></span>Costos</span>
+              </div>
+            </div>
+
+            <div class="linbar">
+              <div class="d-flex justify-content-between">
+                <strong>Eficiencia</strong>
+                <span id="lblEfficiency">{{ "{:.1f}".format(effV) }}%</span>
+              </div>
+              <div class="track mt-1">
+                <div class="fill" id="effFill" style="width:{{ effV|float }}%"></div>
+              </div>
+            </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabla -->
+    <div class="mt-4 table-wrap">
+      <table class="records-table">
+        <thead>
+          <tr>
+            <th>Tipo</th>
+            <th>Fecha</th>
+            <th>Empleado</th>
+            <th>Proyecto</th>
+            <th>Ruta</th>
+            <th>Combustible</th>
+            <th>Servicio/Inc.</th>
+            <th>Monto S/I</th>
+            <th>Venta</th>
+            <th>Utilidad</th>
+          </tr>
+        </thead>
+        <tbody id="recordsTable">
+          {% if recent_events %}
+          {% for ev in recent_events %}
+          {% set ismap = ev is mapping %}
+          {% set is_purchase = (ev.get('kind') == 'Compras') if ismap else false %}
+          <tr>
+            <td>
+              {% if is_purchase %}
+              <span class="badge purchase">🛒 Compra</span>
+              {% elif (ev.route if not ismap else ev.get('route', '')) != 'Local' %}
+              <span class="badge" style="background:#fef3c7;color:#92400e">🚚 Chofer</span>
+              {% else %}
+              <span class="badge" style="background:#dbeafe;color:#1e40af">👷 Operador</span>
+              {% endif %}
+            </td>
+            <td>{{ (ev.date if not ismap else ev.get('date'))|default('', true) }}</td>
+            <td><strong>{{ (ev.employee if not ismap else ev.get('employee'))|default('Sin asignar', true) }}</strong>
+            </td>
+            <td>{{ (ev.project if not ismap else ev.get('project'))|default('Sin proyecto', true) }}</td>
+            <td>{{ (ev.route if not ismap else ev.get('route'))|default('Local', true) }}</td>
+            <td>
+              {% set fuel_amount = (ev.fuel if not ismap else ev.get('fuel', 0))|default(0, true) %}
+              {% set fuel_pid = (ev.fuel_purchase_id if not ismap else ev.get('fuel_purchase_id')) %}
+              {% if fuel_amount %}
+              <span class="badge fuel">
+                {{ "{:.1f}".format(fuel_amount) }} L
+                {% if fuel_pid %}
+                <span title="Dispersado de compra #{{ fuel_pid }}" style="cursor:help; margin-left:4px">💧</span>
+                {% endif %}
+              </span>
+              {% else %}-{% endif %}
+            </td>
+            <td>
+              {% if ismap %}
+              {% if ev.get('kind') == 'Servicio' or ev.get('has_service') %}
+              <span class="badge service">Servicio</span>
+              {% elif ev.get('kind') == 'Incidencia' or ev.get('has_incident') %}
+              <span class="badge incident">Incidencia</span>
+              {% elif is_purchase %}
+              <span class="badge purchase">Compras</span>
+              {% else %}-{% endif %}
+              {% else %}
+              {% if ev.has_service %}<span class="badge service">Servicio</span>
+              {% elif ev.has_incident %}<span class="badge incident">Incidencia</span>
+              {% else %}-{% endif %}
+              {% endif %}
+            </td>
+            <td>{% set sc = (ev.service_cost if not ismap else ev.get('service_cost', 0))|default(0, true) %}${{
+              "{:,.2f}".format(sc) }}</td>
+            <td>
+              {% set sale_amount = (ev.sale_amount if not ismap else ev.get('sale_amount')) %}
+              {% set record_id = (ev.id if not ismap else ev.get('id', loop.index))|default(loop.index, true) %}
+              {% if sale_amount %}
+              <span class="sale-status complete" data-sale="{{ sale_amount }}">${{ "{:,.2f}".format(sale_amount)
+                }}</span>
+              {% else %}
+              <div class="sale-input">
+                <input type="number" step="0.01" min="0" placeholder="$0.00" id="sale_{{ record_id }}">
+                <button onclick="saveSale({{ record_id }})">✓</button>
+              </div>
+              {% endif %}
+            </td>
+            <td>
+              {% set utility = (ev.utility if not ismap else ev.get('utility')) %}
+              {% if utility is not none %}
+              <span class="utility-value {{ 'positive' if utility>0 else 'negative' }}" data-utility="{{ utility }}">
+                {{ '+' if utility>0 else '' }}${{ "{:,.2f}".format(utility) }}
+              </span>
+              {% else %}
+              <span class="utility-value" data-utility="">-</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+          {% else %}
+          <tr>
+            <td colspan="10" class="text-center text-muted" style="padding:2rem">No hay registros para mostrar en este
+              período</td>
+          </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endif %}
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- Modales accesorios -->
+<div class="pro-overlay" id="accOverlay"></div>
+<div class="pro-modal" id="accModal">
+  <div class="pro-card">
+    <header>
+      <h3 id="accModalTitle">Nuevo accesorio</h3>
+      <button class="close" id="accCloseBtn">&times;</button>
+    </header>
+    <div class="body">
+      <label for="accName">Nombre del accesorio</label>
+      <input type="text" id="accName" placeholder="Ej. Martillo hidráulico">
+      <input type="hidden" id="accKind" value="operator">
+      <input type="hidden" id="accEditId" value="">
+    </div>
+    <div class="pro-actions">
+      <button class="btn btn-outline-secondary" id="accCancel">Cancelar</button>
+      <button class="btn btn-primary" id="accSave">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const MXN = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 2 });
+
+  // Buscador de unidades
+  document.getElementById('unitSearch')?.addEventListener('input', e => {
+    const q = e.target.value.toLowerCase();
+    document.querySelectorAll('.unit-card').forEach(card => {
+      card.style.display = card.textContent.toLowerCase().includes(q) ? 'flex' : 'none';
+    });
+  });
+
+  // Cambio de período
+  function changePeriod(period, btn) {
+    document.querySelectorAll('.period-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    {% if detail %}
+    if (period === 'week') {
+      document.getElementById('totalFuel').textContent = '{{ "{:,.1f}".format(detail.liters_week or 0) }} L';
+      document.getElementById('fuelCost').textContent = MXN.format({{ (detail.liters_week or 0) * 28.5 }});
+    } else {
+    document.getElementById('totalFuel').textContent = '{{ "{:,.1f}".format(detail.liters_month or 0) }} L';
+    document.getElementById('fuelCost').textContent = MXN.format({{ (detail.liters_month or 0) * 28.5 }});
+    }
+  {% endif %}
+  updateChart(period);
+}
+
+  // Guardar venta
+  function saveSale(recordId) {
+    const input = document.getElementById(`sale_${recordId}`);
+    if (!input) return;
+    const value = parseFloat(input.value);
+    if (!value || value <= 0) { alert('Ingresa un monto válido'); return; }
+
+    fetch(`/admin/api/units/{{ unit.id if unit else 0 }}/save-sale`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ record_id: recordId, sale_amount: value })
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (!data.success) throw new Error(data.error || 'Error al guardar');
+        const saleCell = input.closest('td');
+        saleCell.innerHTML = `<span class="sale-status complete" data-sale="${value}">${MXN.format(value)}</span>`;
+        const utilCell = saleCell.nextElementSibling;
+        const util = (typeof data.utility === 'number') ? data.utility : 0;
+        const cls = util > 0 ? 'positive' : 'negative';
+        const pref = util > 0 ? '+' : '';
+        utilCell.innerHTML = `<span class="utility-value ${cls}" data-utility="${util}">${pref}${MXN.format(util)}</span>`;
+        recalcStats();
+        showNotification('✓ Venta guardada', 'success');
+      })
+      .catch(e => { console.error(e); showNotification('✗ No se pudo guardar', 'error'); });
+  }
+
+  // Recalcular estadísticas
+  function recalcStats() {
+    const rows = Array.from(document.querySelectorAll('#recordsTable tr'));
+    let totalSales = 0, totalCosts = 0;
+    rows.forEach(tr => {
+      const tds = tr.querySelectorAll('td'); if (tds.length < 10) return;
+      const fuelText = tds[5]?.textContent || '';
+      const fuelL = parseFloat((fuelText.match(/([\d.]+)/) || [0, 0])[1]) || 0;
+      const scText = tds[7]?.textContent || '0';
+      const service = parseFloat(scText.replace(/[^\d.-]/g, '')) || 0;
+      const saleEl = tds[8]?.querySelector('[data-sale]');
+      const sale = saleEl ? parseFloat(saleEl.getAttribute('data-sale')) : 0;
+      totalSales += sale;
+      totalCosts += (fuelL * 28.5) + service;
+    });
+    const util = totalSales - totalCosts;
+    const margin = totalSales > 0 ? (util / totalSales) * 100 : 0;
+
+    const mSales = document.getElementById('mSales'); if (mSales) mSales.textContent = MXN.format(totalSales);
+    const mCosts = document.getElementById('mCosts'); if (mCosts) mCosts.textContent = MXN.format(totalCosts);
+    const mUtility = document.getElementById('mUtility'); if (mUtility) mUtility.textContent = MXN.format(util);
+
+    const gauge = document.getElementById('gaugeMargin');
+    const lblMargin = document.getElementById('lblMargin');
+    if (gauge && lblMargin) {
+      gauge.style.setProperty('--p', Math.abs(margin).toFixed(1));
+      gauge.classList.toggle('negative', margin < 0);
+      lblMargin.textContent = `${margin.toFixed(1)}%`;
+    }
+
+    const totalSC = totalSales + totalCosts;
+    const sPct = totalSC > 0 ? (totalSales * 100 / totalSC) : 50;
+    const cPct = 100 - sPct;
+    document.getElementById('barSales')?.style.setProperty('width', `${sPct}%`);
+    document.getElementById('barCosts')?.style.setProperty('width', `${cPct}%`);
+    const lblSalesPct = document.getElementById('lblSalesPct'); if (lblSalesPct) lblSalesPct.textContent = sPct.toFixed(0);
+    const lblCostsPct = document.getElementById('lblCostsPct'); if (lblCostsPct) lblCostsPct.textContent = cPct.toFixed(0);
+  }
+
+  // Notificaciones
+  function showNotification(msg, type) {
+    const n = document.createElement('div');
+    n.className = `alert alert-${type} position-fixed`;
+    n.style.cssText = 'top:1rem;right:1rem;z-index:9999;padding:1rem 1.5rem;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.2);font-weight:700';
+    n.textContent = msg; document.body.appendChild(n);
+    setTimeout(() => n.remove(), 3000);
+  }
+
+  // Gráfico
+  {% if unit %}
+  (() => {
+    const ctx = document.getElementById('fuelChart')?.getContext('2d'); if (!ctx) return;
+    new Chart(ctx, {
+      type: 'line',
+      data: { labels: {{ fuel_labels| tojson }},
+  datasets: [{ label: 'Consumo (L)', data: {{ fuel_series| tojson }},
+    borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,.12)', tension: .4, pointRadius: 4, pointBackgroundColor: '#3b82f6', pointBorderWidth: 2, pointBorderColor: '#fff', fill: true}]},
+  options: {
+    responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { backgroundColor: '#111827', padding: 12, titleFont: { size: 14, weight: 'bold' }, bodyFont: { size: 13 } } },
+    scales: { y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,.06)' }, ticks: { font: { size: 11, weight: '600' } } }, x: { grid: { display: false }, ticks: { font: { size: 11, weight: '600' } } } }
+  }
+  });
+}) ();
+
+  function updateChart(period) {
+    fetch(`/admin/api/units/{{ unit.id if unit else 0 }}/period-data?period=${period}`)
+      .then(r => r.json())
+      .then(d => {
+        document.getElementById('totalFuel').textContent = `${d.total_fuel.toFixed(1)} L`;
+        document.getElementById('fuelCost').textContent = MXN.format(d.fuel_cost || 0);
+        document.getElementById('servicesCount').textContent = d.services ?? 0;
+        document.getElementById('incidentsCount').textContent = d.incidents ?? 0;
+      })
+      .catch(e => console.error('Error periodo:', e));
+  }
+  {% endif %}
+
+  /* Accesorios: lógica UI + API */
+  const accOverlay = document.getElementById('accOverlay');
+  const accModal = document.getElementById('accModal');
+  const accTitle = document.getElementById('accModalTitle');
+  const accName = document.getElementById('accName');
+  const accKindInp = document.getElementById('accKind');
+  const accEditId = document.getElementById('accEditId');
+  const accCancel = document.getElementById('accCancel');
+  const accClose = document.getElementById('accCloseBtn');
+  const accSave = document.getElementById('accSave');
+  const listOp = document.getElementById('accListOperator');
+  const listDrv = document.getElementById('accListDriver');
+  const btnAddOp = document.getElementById('btnAddAccOperator');
+  const btnAddDrv = document.getElementById('btnAddAccDriver');
+
+  function openAccModal(kind, editId = null, currentName = '') {
+    accTitle.textContent = editId ? 'Editar accesorio' : 'Nuevo accesorio';
+    accKindInp.value = kind;
+    accEditId.value = editId || '';
+    accName.value = currentName || '';
+    accOverlay.style.display = 'block';
+    accModal.style.display = 'grid';
+    accName.focus();
+  }
+  function closeAccModal() {
+    accOverlay.style.display = 'none';
+    accModal.style.display = 'none';
+    accName.value = '';
+    accEditId.value = '';
+  }
+
+  accCancel?.addEventListener('click', closeAccModal);
+  accClose?.addEventListener('click', closeAccModal);
+  accOverlay?.addEventListener('click', closeAccModal);
+
+  btnAddOp?.addEventListener('click', () => openAccModal('operator'));
+  btnAddDrv?.addEventListener('click', () => openAccModal('driver'));
+
+  function renderList(kind, items) {
+    const ul = kind === 'operator' ? listOp : listDrv;
+    ul.innerHTML = '';
+    items.forEach(it => {
+      const li = document.createElement('li');
+      li.className = 'acc-item';
+      li.dataset.id = it.id ?? '';
+      li.innerHTML = `
+      <span class="acc-name">${it.name}</span>
+      <div class="acc-actions">
+        <button class="btn-ghost btn-sm" data-edit>✏️</button>
+        <button class="btn-danger btn-sm" data-del>🗑️</button>
+      </div>
+    `;
+      ul.appendChild(li);
+    });
+    if (items.length === 0) {
+      const li = document.createElement('li');
+      li.className = 'acc-item';
+      li.innerHTML = `<span class="acc-name" style="color:#64748b;font-weight:600">Sin accesorios</span>`;
+      ul.appendChild(li);
+    }
+  }
+
+  async function apiFetchAccessories(kind) {
+    const url = `/admin/api/accessories?kind=${encodeURIComponent(kind)}`;
+    try {
+      const r = await fetch(url);
+      if (!r.ok) throw new Error('No se pudo cargar el catálogo');
+      const j = await r.json();
+      if (j && (j.ok === true || j.success === true) && Array.isArray(j.items)) return j.items;
+      if (Array.isArray(j)) return j;
+      return [];
+    } catch (e) {
+      console.error(e);
+      showNotification('No se pudo cargar el catálogo', 'error');
+      return [];
+    }
+  }
+
+  async function apiCreateAccessory(kind, name) {
+    const r = await fetch('/admin/api/accessories', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ kind, name })
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || !(j.ok || j.success)) {
+      throw new Error(j.error || 'Error al crear accesorio');
+    }
+    return j;
+  }
+  async function apiUpdateAccessory(id, name) {
+    const r = await fetch(`/admin/api/accessories/${id}`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name })
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || !(j.ok || j.success)) {
+      throw new Error(j.error || 'Error al actualizar accesorio');
+    }
+    return j;
+  }
+  async function apiDeleteAccessory(id) {
+    const r = await fetch(`/admin/api/accessories/${id}`, { method: 'DELETE' });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || !(j.ok || j.success)) {
+      throw new Error(j.error || 'Error al eliminar accesorio');
+    }
+    return j;
+  }
+
+  let cacheOp = [], cacheDrv = [];
+
+  async function loadAccAll() {
+    cacheOp = await apiFetchAccessories('operator');
+    cacheDrv = await apiFetchAccessories('driver');
+    renderList('operator', cacheOp);
+    renderList('driver', cacheDrv);
+  }
+
+  document.getElementById('accCatalog') && loadAccAll();
+
+  [listOp, listDrv].forEach(ul => {
+    ul?.addEventListener('click', async (e) => {
+      const li = e.target.closest('.acc-item'); if (!li) return;
+      const id = li.dataset.id;
+      const isOpList = (ul === listOp);
+      const kind = isOpList ? 'operator' : 'driver';
+
+      if (e.target.matches('[data-edit]')) {
+        const currentName = li.querySelector('.acc-name').textContent.trim();
+        openAccModal(kind, id, currentName);
+        return;
+      }
+      if (e.target.matches('[data-del]')) {
+        if (!id) return;
+        if (!confirm('¿Eliminar accesorio?')) return;
+        try {
+          await apiDeleteAccessory(id);
+          if (isOpList) { cacheOp = cacheOp.filter(x => String(x.id) !== String(id)); renderList('operator', cacheOp); }
+          else { cacheDrv = cacheDrv.filter(x => String(x.id) !== String(id)); renderList('driver', cacheDrv); }
+          showNotification('✓ Accesorio eliminado', 'success');
+        } catch (e2) {
+          console.error(e2);
+          showNotification(e2.message || 'No se pudo eliminar', 'error');
+        }
+      }
+    });
+  });
+
+  accSave?.addEventListener('click', async () => {
+    const name = accName.value.trim();
+    if (!name) { accName.focus(); return; }
+    const kind = accKindInp.value;
+    const editId = accEditId.value || null;
+
+    try {
+      if (editId) {
+        await apiUpdateAccessory(editId, name);
+        const list = (kind === 'operator') ? cacheOp : cacheDrv;
+        const idx = list.findIndex(x => String(x.id) === String(editId));
+        if (idx >= 0) { list[idx].name = name; }
+        (kind === 'operator') ? renderList('operator', cacheOp) : renderList('driver', cacheDrv);
+        showNotification('✓ Accesorio actualizado', 'success');
+      } else {
+        const res = await apiCreateAccessory(kind, name);
+        const newItem = res.item || { id: res.id, name, kind };
+        if (!newItem?.id) { throw new Error('Respuesta inválida del servidor'); }
+        if (kind === 'operator') { cacheOp.push(newItem); renderList('operator', cacheOp); }
+        else { cacheDrv.push(newItem); renderList('driver', cacheDrv); }
+        showNotification('✓ Accesorio agregado', 'success');
+      }
+      closeAccModal();
+    } catch (e) {
+      console.error(e);
+      showNotification(e.message || 'Operación fallida', 'error');
+    }
+  });
+</script>
+
+{% endblock %}

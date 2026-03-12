@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+{% block title %}Registro · EMEX{% endblock %}
+
+{% block head_extra %}
+<style>
+  .role-chooser{display:flex;gap:14px;justify-content:center;margin:8px 0 18px}
+  .role-btn{
+    flex:1;max-width:260px;display:flex;align-items:center;justify-content:center;
+    gap:10px;padding:16px 18px;border-radius:16px;border:1px solid var(--line,#e6e6e6);
+    background:#fff;cursor:pointer;transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+    box-shadow:0 1px 2px rgba(0,0,0,.04); font-weight:600;
+  }
+  .role-btn .emoji{font-size:22px}
+  .role-btn.active{border-color:var(--primary,#3b82f6); box-shadow:0 6px 22px rgba(59,130,246,.18)}
+  .role-btn:hover{transform:translateY(-1px)}
+  .muted-center{text-align:center;color:var(--muted,#6b7280)}
+  .form-hidden{display:none}
+  .text-right{ text-align:right }
+
+  /* Campo select con etiqueta clásica para evitar solapado */
+  .field.block label{display:block;margin:0 0 6px 2px;font-weight:600;color:#374151}
+  .field.block select{
+    width:100%; padding:12px 14px; border:1px solid #e5e7eb; border-radius:12px; background:#fff;
+    font-size:16px; outline:none;
+  }
+  .field.block select:focus{ border-color:#3b82f6; box-shadow:0 0 0 3px rgba(59,130,246,.15) }
+  .field.readonly input[readonly]{background:#f9fafb}
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="auth-wrap auth-aura">
+  <div class="auth-card pro elevate" style="max-width:720px">
+
+    <div class="auth-brand center">
+      <span class="auth-logo">🪪</span>
+      <div class="auth-brand-text">
+        <h1 class="auth-title">Registro</h1>
+        <p class="subtitle muted-center">Crea tu acceso a EMEX</p>
+      </div>
+    </div>
+
+    <div class="role-chooser" role="tablist" aria-label="Elige tipo de cuenta">
+      <button id="btnEmp" class="role-btn active" data-target="form-emp" role="tab" aria-selected="true">
+        <span class="emoji">👷</span> Empleado
+      </button>
+      <button id="btnAdm" class="role-btn" data-target="form-adm" role="tab" aria-selected="false">
+        <span class="emoji">🛡️</span> Administrador
+      </button>
+    </div>
+
+    <!-- EMPLEADO -->
+    <form method="post" id="form-emp" class="smart-form" novalidate>
+      <input type="hidden" name="mode" value="employee">
+
+      <div class="field block">
+        <label for="employee_id">Empleado en catálogo *</label>
+        <select id="employee_id" name="employee_id" required>
+          <option value="" disabled selected>Selecciona tu nombre…</option>
+          {% for e in employees %}
+            <option value="{{ e.id }}" data-email="{{ e.email or '' }}">{{ e.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="field float">
+        <input type="email" id="emp_email" name="email" placeholder=" ">
+        <label for="emp_email">Correo (si aún no tienes uno en el catálogo)</label>
+      </div>
+
+      <div class="grid-2">
+        <div class="field float">
+          <input type="password" id="emp_pw" name="password" placeholder=" " required>
+          <label for="emp_pw">Contraseña</label>
+        </div>
+        <div class="field float">
+          <input type="password" id="emp_pw2" name="password2" placeholder=" " required>
+          <label for="emp_pw2">Confirmar contraseña</label>
+        </div>
+      </div>
+
+      <div class="text-right">
+        <button class="btn auth-primary" type="submit">Crear cuenta de empleado</button>
+      </div>
+    </form>
+
+    <!-- ADMIN -->
+    <form method="post" id="form-adm" class="smart-form form-hidden" novalidate>
+      <input type="hidden" name="mode" value="admin">
+
+      <div class="field float">
+        <input type="text" id="adm_name" name="name" placeholder=" " required>
+        <label for="adm_name">Nombre</label>
+      </div>
+
+      <div class="field float">
+        <input type="email" id="adm_email" name="email" placeholder=" " required>
+        <label for="adm_email">Correo</label>
+      </div>
+
+      <div class="grid-2">
+        <div class="field float">
+          <input type="password" id="adm_pw" name="password" placeholder=" " required>
+          <label for="adm_pw">Contraseña</label>
+        </div>
+        <div class="field float">
+          <input type="password" id="adm_pw2" name="password2" placeholder=" " required>
+          <label for="adm_pw2">Confirmar contraseña</label>
+        </div>
+      </div>
+
+      <div class="field float">
+        <input type="text" id="adm_code" name="admin_code" placeholder=" " required>
+        <label for="adm_code">Código de administrador</label>
+      </div>
+
+      <div class="text-right">
+        <button class="btn auth-primary" type="submit">Crear administrador</button>
+      </div>
+    </form>
+
+    <p class="muted-center" style="margin-top:14px">
+      ¿Ya tienes cuenta? <a href="{{ url_for('auth.login') }}">Inicia sesión</a>
+    </p>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Toggle de formularios
+  const btnEmp = document.getElementById('btnEmp');
+  const btnAdm = document.getElementById('btnAdm');
+  const fEmp   = document.getElementById('form-emp');
+  const fAdm   = document.getElementById('form-adm');
+
+  function setFormVisible(which){
+    const empOn = (which === 'emp');
+    fEmp.classList.toggle('form-hidden', !empOn);
+    fAdm.classList.toggle('form-hidden',  empOn);
+    btnEmp.classList.toggle('active', empOn);
+    btnAdm.classList.toggle('active', !empOn);
+    Array.from(fEmp.elements).forEach(el => { if(el.name) el.disabled = !empOn; });
+    Array.from(fAdm.elements).forEach(el => { if(el.name) el.disabled = empOn; });
+  }
+  btnEmp.addEventListener('click', ()=> setFormVisible('emp'));
+  btnAdm.addEventListener('click', ()=> setFormVisible('adm'));
+  setFormVisible('emp');
+
+  // Autocompletar correo del catálogo y bloquear edición si ya existe
+  const empSelect = document.getElementById('employee_id');
+  const empEmail  = document.getElementById('emp_email');
+  function syncEmpEmail(){
+    const opt = empSelect.options[empSelect.selectedIndex];
+    const email = opt ? (opt.getAttribute('data-email') || '') : '';
+    if(email){
+      empEmail.value = email;
+      empEmail.readOnly = true;
+      empEmail.classList.add('readonly');
+      empEmail.title = 'El correo ya está registrado en el catálogo';
+    }else{
+      empEmail.readOnly = false;
+      empEmail.classList.remove('readonly');
+      empEmail.title = '';
+      empEmail.value = '';
+    }
+  }
+  empSelect.addEventListener('change', syncEmpEmail);
+</script>
+{% endblock %}

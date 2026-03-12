@@ -1,0 +1,1002 @@
+{% extends "base.html" %}
+{% block title %}Gestor de Compras{% endblock %}
+
+{% block content %}
+<style>
+  /* ====== Estilos profesionales MEJORADOS para Gestor de Compras ====== */
+  :root {
+    --primary: #1e40af;
+    --primary-light: #3b82f6;
+    --success: #059669;
+    --warning: #f59e0b;
+    --danger: #dc2626;
+    --info: #0891b2;
+    --secondary: #64748b;
+    --bg-light: #f8fafc;
+    --border: #e2e8f0;
+    --text: #0f172a;
+    --text-muted: #64748b;
+  }
+
+  .purchase-container {
+    background: var(--bg-light);
+    min-height: 100vh;
+    padding: 2rem 1rem;
+  }
+
+  .purchase-wrapper {
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  /* Header mejorado */
+  .purchase-header {
+    background: linear-gradient(135deg, #0891b2 0%, #3b82f6 100%);
+    color: white;
+    border-radius: 20px;
+    padding: 2rem 2.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 10px 40px rgba(8, 145, 178, 0.25);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .purchase-header::before {
+    content: "";
+    position: absolute;
+    top: -50%;
+    right: -5%;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.15), transparent 70%);
+    border-radius: 50%;
+  }
+
+  .purchase-header-content {
+    position: relative;
+    z-index: 1;
+  }
+
+  .purchase-header h1 {
+    font-size: 2rem;
+    font-weight: 900;
+    margin: 0 0 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .purchase-header p {
+    margin: 0;
+    opacity: 0.93;
+    font-size: 1.1rem;
+    font-weight: 500;
+  }
+
+  .btn-back {
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    color: white;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 12px;
+    padding: 0.7rem 1.5rem;
+    font-weight: 800;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    transition: all 0.3s;
+    margin-bottom: 1.5rem;
+  }
+
+  .btn-back:hover {
+    background: white;
+    color: var(--info);
+    transform: translateX(-4px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  /* Cards rediseñadas - Layout horizontal optimizado */
+  .purchase-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+    transition: all 0.3s;
+  }
+
+  .purchase-card:hover {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+  }
+
+  .card-header-toggle {
+    padding: 1.5rem 2rem;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .card-header-toggle:hover {
+    padding-left: 2.3rem;
+  }
+
+  .card-header-toggle.active {
+    padding-left: 2.5rem;
+  }
+
+  .header-primary {
+    background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+  }
+
+  .header-warning {
+    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+  }
+
+  .header-info {
+    background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
+  }
+
+  .header-success {
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+  }
+
+  .header-secondary {
+    background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+  }
+
+  .toggle-switch-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex: 1;
+  }
+
+  .toggle-switch {
+    position: relative;
+    width: 64px;
+    height: 32px;
+  }
+
+  .toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  .toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.3);
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    border-radius: 34px;
+    transition: 0.3s;
+  }
+
+  .toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 22px;
+    width: 22px;
+    left: 3px;
+    bottom: 3px;
+    background: white;
+    border-radius: 50%;
+    transition: 0.3s;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+
+  input:checked+.toggle-slider {
+    background: rgba(255, 255, 255, 0.95);
+  }
+
+  input:checked+.toggle-slider:before {
+    transform: translateX(32px);
+    background: linear-gradient(135deg, #10b981, #059669);
+  }
+
+  .toggle-label {
+    font-size: 1.15rem;
+    font-weight: 900;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    user-select: none;
+  }
+
+  .toggle-icon {
+    font-size: 1.4rem;
+  }
+
+  .card-body-collapsible {
+    padding: 2rem 2.5rem;
+    display: none;
+    animation: slideDown 0.3s ease-out;
+  }
+
+  .card-body-collapsible.active {
+    display: block;
+  }
+
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Grid optimizado - Mejor uso del espacio */
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 0;
+  }
+
+  .form-grid.grid-2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .form-grid.grid-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .form-grid-full {
+    grid-column: 1 / -1;
+  }
+
+  /* Form controls mejorados */
+  .form-group {
+    margin: 0;
+  }
+
+  .form-label {
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 0.6rem;
+    font-size: 0.92rem;
+    display: block;
+    letter-spacing: 0.01em;
+  }
+
+  .form-label-required::after {
+    content: " *";
+    color: var(--danger);
+    font-weight: 900;
+  }
+
+  .form-control,
+  .form-select {
+    width: 100%;
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+    transition: all 0.2s;
+    background: white;
+  }
+
+  .form-control:focus,
+  .form-select:focus {
+    outline: none;
+    border-color: var(--primary-light);
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+  }
+
+  .form-control::placeholder {
+    color: #94a3b8;
+  }
+
+  textarea.form-control {
+    resize: vertical;
+    min-height: 100px;
+    font-family: inherit;
+  }
+
+  .form-text {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-top: 0.5rem;
+    display: block;
+  }
+
+  /* Input secundario (manual) */
+  .input-secondary {
+    margin-top: 0.75rem;
+    background: var(--bg-light);
+  }
+
+  /* File input personalizado */
+  .file-input-wrapper {
+    position: relative;
+  }
+
+  input[type="file"] {
+    width: 100%;
+    padding: 1rem;
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    cursor: pointer;
+    background: var(--bg-light);
+    transition: all 0.2s;
+  }
+
+  input[type="file"]:hover {
+    border-color: var(--primary-light);
+    background: white;
+  }
+
+  input[type="file"]::file-selector-button {
+    background: var(--primary-light);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 0.6rem 1.2rem;
+    font-weight: 800;
+    cursor: pointer;
+    margin-right: 1rem;
+    transition: all 0.2s;
+  }
+
+  input[type="file"]::file-selector-button:hover {
+    background: var(--primary);
+    transform: translateY(-1px);
+  }
+
+  /* Botones de acción mejorados */
+  .action-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    padding: 2rem 0 3rem;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    border-radius: 12px;
+    padding: 0.9rem 2rem;
+    font-weight: 800;
+    font-size: 1rem;
+    transition: all 0.2s;
+    border: 2px solid transparent;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    text-decoration: none;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(30, 64, 175, 0.2);
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(30, 64, 175, 0.3);
+  }
+
+  .btn-secondary {
+    background: white;
+    border-color: var(--border);
+    color: var(--text);
+  }
+
+  .btn-secondary:hover {
+    background: var(--bg-light);
+    border-color: var(--secondary);
+    transform: translateY(-2px);
+  }
+
+  /* Info card para información general */
+  .info-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 2rem 2.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+    margin-bottom: 1.5rem;
+  }
+
+  .info-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.75rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--border);
+  }
+
+  .info-card-icon {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+    box-shadow: 0 4px 12px rgba(30, 64, 175, 0.25);
+  }
+
+  .info-card-title {
+    font-size: 1.3rem;
+    font-weight: 900;
+    margin: 0;
+    color: var(--text);
+  }
+
+  /* Responsive optimizado */
+  @media (max-width: 968px) {
+    .purchase-container {
+      padding: 1rem 0.5rem;
+    }
+
+    .purchase-header {
+      padding: 1.5rem 1.5rem;
+      border-radius: 16px;
+    }
+
+    .purchase-header h1 {
+      font-size: 1.6rem;
+    }
+
+    .form-grid,
+    .form-grid.grid-2,
+    .form-grid.grid-3 {
+      grid-template-columns: 1fr;
+      gap: 1.25rem;
+    }
+
+    .card-body-collapsible {
+      padding: 1.5rem 1.5rem;
+    }
+
+    .info-card {
+      padding: 1.5rem 1.5rem;
+    }
+
+    .action-buttons {
+      flex-direction: column-reverse;
+    }
+
+    .btn {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .toggle-label {
+      font-size: 1rem;
+    }
+
+    .toggle-icon {
+      font-size: 1.2rem;
+    }
+
+    .card-header-toggle {
+      padding: 1.2rem 1.5rem;
+    }
+  }
+</style>
+
+<div class="purchase-container">
+  <div class="purchase-wrapper">
+
+    <!-- Header -->
+    <div class="purchase-header">
+      <a href="{{ url_for('worker.index') }}" class="btn-back">
+        <span>←</span> Volver al inicio
+      </a>
+      <div class="purchase-header-content">
+        <h1>🛒 Gestor de Compras</h1>
+        <p>Registra compras de diesel, refacciones y servicios externos de manera eficiente</p>
+      </div>
+    </div>
+
+    <form method="POST" action="{{ url_for('worker.gestor_compras') }}" enctype="multipart/form-data"
+      class="needs-validation" novalidate>
+
+      <!-- Información General -->
+      <div class="info-card">
+        <div class="info-card-header">
+          <div class="info-card-icon">ℹ️</div>
+          <h2 class="info-card-title">Información General</h2>
+        </div>
+
+        <div class="form-grid grid-2">
+          <!-- Gestor -->
+          <div class="form-group">
+            <label class="form-label form-label-required">Gestor de compras</label>
+            <select name="manager_id" id="manager_id" class="form-select">
+              <option value="">-- Seleccionar gestor --</option>
+              {% for w in workers %}
+              <option value="{{ w.id }}">{{ w.name }}</option>
+              {% endfor %}
+            </select>
+            <input type="text" name="manager_name" class="form-control input-secondary"
+              placeholder="O escribe nombre manualmente">
+          </div>
+
+          <!-- Proyecto -->
+          <div class="form-group">
+            <label class="form-label form-label-required">Proyecto / Obra</label>
+            <select name="project_id" id="project_id" class="form-select">
+              <option value="">-- Seleccionar proyecto --</option>
+              {% for p in projects %}
+              <option value="{{ p.id }}">{{ p.label }}</option>
+              {% endfor %}
+            </select>
+            <input type="text" name="project_text" class="form-control input-secondary"
+              placeholder="O escribe proyecto manualmente">
+          </div>
+
+          <!-- Fecha -->
+          <div class="form-group">
+            <label class="form-label form-label-required">Fecha y hora de compra</label>
+            <input type="datetime-local" name="purchase_date" class="form-control" required>
+          </div>
+        </div>
+      </div>
+
+      <!-- Compra de Diesel -->
+      <div class="purchase-card">
+        <div class="card-header-toggle header-warning" onclick="toggleSection('dieselSection', this)">
+          <label class="toggle-switch-wrapper">
+            <div class="toggle-switch">
+              <input type="checkbox" id="toggleDiesel" name="has_diesel" value="si">
+              <span class="toggle-slider"></span>
+            </div>
+            <span class="toggle-label">
+              <span class="toggle-icon">⛽</span>
+              <span>¿Se compró diesel?</span>
+            </span>
+          </label>
+        </div>
+        <div class="card-body-collapsible" id="dieselSection">
+          <div class="form-grid grid-3">
+            <!-- Eliminado selector de unidad único -->
+
+            <div class="form-group">
+              <label class="form-label">Tipo de compra</label>
+              <select name="diesel_type" id="diesel_type" class="form-select" onchange="calcDiesel()">
+                <option value="litros">Por Litros</option>
+                <option value="pesos">Por Monto ($)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Cantidad (Litros o $)</label>
+              <input type="number" name="diesel_amount" id="diesel_amount" class="form-control" step="0.01"
+                placeholder="0.00" oninput="calcDiesel()">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Precio por litro ($)</label>
+              <input type="number" name="diesel_price_per_liter" id="diesel_price_per_liter" class="form-control"
+                step="0.01" placeholder="Ej: 25.50" oninput="calcDiesel()">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Costo Total ($)</label>
+              <input type="number" name="diesel_total_cost" id="diesel_total_cost" class="form-control" step="0.01"
+                readonly style="background-color: #e9ecef;">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Litros Totales</label>
+              <input type="number" id="diesel_total_liters_display" class="form-control" readonly
+                style="background-color: #e9ecef; font-weight: bold;">
+            </div>
+
+            <div class="form-group form-grid-full">
+              <label class="form-label">Notas sobre diesel (Proveedor/Gasolinera)</label>
+              <textarea name="diesel_notes" class="form-control" rows="2"
+                placeholder="Nombre de la gasolinera, número de factura..."></textarea>
+            </div>
+          </div>
+
+          <!-- SECCIÓN DE DISPERSIÓN -->
+          <hr style="margin: 2rem 0; border-color: var(--border);">
+
+          <h3
+            style="font-size: 1.2rem; font-weight: 800; color: var(--text); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+            <span>💧</span> Dispersión de Diesel
+          </h3>
+
+          <div
+            style="background: var(--bg-light); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border);">
+
+            <!-- Resumen de dispersión -->
+            <div style="display: flex; gap: 2rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+              <div style="flex: 1; min-width: 150px;">
+                <label class="form-label" style="font-size: 0.85rem;">Total Comprado</label>
+                <div id="disp_total" style="font-size: 1.5rem; font-weight: 900; color: var(--primary);">0.00 L</div>
+              </div>
+              <div style="flex: 1; min-width: 150px;">
+                <label class="form-label" style="font-size: 0.85rem;">Total Dispersado</label>
+                <div id="disp_assigned" style="font-size: 1.5rem; font-weight: 900; color: var(--success);">0.00 L</div>
+              </div>
+              <div style="flex: 1; min-width: 150px;">
+                <label class="form-label" style="font-size: 0.85rem;">Pendiente</label>
+                <div id="disp_remaining" style="font-size: 1.5rem; font-weight: 900; color: var(--warning);">0.00 L
+                </div>
+              </div>
+            </div>
+
+            <!-- Agregar unidad -->
+            <div class="form-grid" style="align-items: end; grid-template-columns: repeat(4, 1fr);">
+              <div class="form-group">
+                <label class="form-label">Unidad a dispersar</label>
+                <select id="disp_unit_select" class="form-select">
+                  <option value="">-- Seleccionar --</option>
+                  {% for u in units %}
+                  <option value="{{ u.id }}">{{ u.label }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Litros</label>
+                <input type="number" id="disp_liters_input" class="form-control" step="0.01" placeholder="0.00">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Fecha y hora de dispersión</label>
+                <input type="datetime-local" id="disp_datetime_input" class="form-control">
+              </div>
+              <div class="form-group">
+                <button type="button" class="btn btn-primary" style="width: 100%; padding: 0.75rem;"
+                  onclick="addDispersion()">
+                  + Agregar
+                </button>
+              </div>
+            </div>
+
+            <!-- Lista de dispersión -->
+            <div id="dispersion_list" style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.5rem;">
+              <!-- Items agregados dinámicamente -->
+            </div>
+
+            <!-- Input oculto para enviar JSON -->
+            <input type="hidden" name="diesel_dispersion_data" id="diesel_dispersion_data">
+
+          </div>
+        </div>
+      </div>
+
+      <!-- Compra de Refacciones -->
+      <div class="purchase-card">
+        <div class="card-header-toggle header-info" onclick="toggleSection('partsSection', this)">
+          <label class="toggle-switch-wrapper">
+            <div class="toggle-switch">
+              <input type="checkbox" id="toggleParts" name="has_parts" value="si">
+              <span class="toggle-slider"></span>
+            </div>
+            <span class="toggle-label">
+              <span class="toggle-icon">🔧</span>
+              <span>¿Se compraron refacciones?</span>
+            </span>
+          </label>
+        </div>
+        <div class="card-body-collapsible" id="partsSection">
+          <div class="form-grid grid-2">
+            <div class="form-group">
+              <label class="form-label">Unidad destino</label>
+              <select name="parts_unit_id" class="form-select">
+                <option value="">-- Seleccionar unidad --</option>
+                {% for u in units %}
+                <option value="{{ u.id }}">{{ u.label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Nombre de la refacción</label>
+              <input type="text" name="parts_name" class="form-control" placeholder="Ej: Filtro de aceite">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Costo de refacción</label>
+              <input type="number" name="parts_cost" class="form-control" step="0.01" placeholder="Ej: 1500.00">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Ticket o Factura #</label>
+              <input type="text" name="parts_invoice" class="form-control" placeholder="Ej: FAC-2025-001">
+            </div>
+
+            <div class="form-group form-grid-full">
+              <label class="form-label">Notas sobre refacción</label>
+              <textarea name="parts_notes" class="form-control" rows="3"
+                placeholder="Proveedor, garantía, condiciones especiales..."></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pago a Prestadores -->
+      <div class="purchase-card">
+        <div class="card-header-toggle header-success" onclick="toggleSection('serviceSection', this)">
+          <label class="toggle-switch-wrapper">
+            <div class="toggle-switch">
+              <input type="checkbox" id="toggleService" name="has_service" value="si">
+              <span class="toggle-slider"></span>
+            </div>
+            <span class="toggle-label">
+              <span class="toggle-icon">👷</span>
+              <span>¿Se pagó a prestador de servicios?</span>
+            </span>
+          </label>
+        </div>
+        <div class="card-body-collapsible" id="serviceSection">
+          <div class="form-grid grid-2">
+            <div class="form-group">
+              <label class="form-label">Unidad destino</label>
+              <select name="service_unit_id" class="form-select">
+                <option value="">-- Seleccionar unidad --</option>
+                {% for u in units %}
+                <option value="{{ u.id }}">{{ u.label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Tipo de servicio</label>
+              <select name="service_type" class="form-select">
+                <option value="">-- Seleccionar --</option>
+                <option value="electrico">Eléctrico</option>
+                <option value="mecanico">Mecánico</option>
+                <option value="plomero">Plomero</option>
+                <option value="soldador">Soldador</option>
+                <option value="pintura">Pintura</option>
+                <option value="otro">Otro</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Nombre del prestador</label>
+              <input type="text" name="service_provider" class="form-control" placeholder="Ej: Juan Pérez">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Costo del servicio</label>
+              <input type="number" name="service_cost" class="form-control" step="0.01" placeholder="Ej: 2500.00">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Ticket o Factura #</label>
+              <input type="text" name="service_invoice" class="form-control" placeholder="Ej: REC-2025-010">
+            </div>
+
+            <div class="form-group form-grid-full">
+              <label class="form-label">Descripción del servicio</label>
+              <textarea name="service_description" class="form-control" rows="3"
+                placeholder="Detalle del trabajo realizado, materiales utilizados..."></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Adjuntar Documentos -->
+      <div class="info-card">
+        <div class="info-card-header">
+          <div class="info-card-icon" style="background: linear-gradient(135deg, #64748b 0%, #475569 100%);">📎</div>
+          <h2 class="info-card-title">Adjuntar documentos (opcional)</h2>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Archivos (facturas, tickets, fotos)</label>
+          <input type="file" name="attachments" class="form-control" multiple accept="image/*,.pdf,.doc,.docx">
+          <small class="form-text">Formatos permitidos: JPG, PNG, PDF, DOC, DOCX. Máximo 10MB por archivo.</small>
+        </div>
+      </div>
+
+      <!-- Notas Generales -->
+      <div class="info-card">
+        <div class="form-group">
+          <label class="form-label">Notas generales</label>
+          <textarea name="general_notes" class="form-control" rows="4"
+            placeholder="Cualquier información adicional relevante sobre la compra..."></textarea>
+        </div>
+      </div>
+
+      <!-- Botones de Acción -->
+      <div class="action-buttons">
+        <a href="{{ url_for('worker.index') }}" class="btn btn-secondary">
+          <span>✕</span> Cancelar
+        </a>
+        <button type="submit" class="btn btn-primary">
+          <span>💾</span> Guardar Registro
+        </button>
+      </div>
+
+    </form>
+
+  </div>
+</div>
+
+<script>
+  // Toggle secciones con animación mejorada
+  function toggleSection(sectionId, headerElement) {
+    const section = document.getElementById(sectionId);
+    const checkbox = headerElement.querySelector('input[type="checkbox"]');
+
+    if (checkbox) {
+      checkbox.checked = !checkbox.checked;
+      section.classList.toggle('active', checkbox.checked);
+      headerElement.classList.toggle('active', checkbox.checked);
+    }
+  }
+
+  // Permitir que los clicks en el toggle funcionen correctamente
+  document.querySelectorAll('.toggle-switch-wrapper').forEach(wrapper => {
+    wrapper.addEventListener('click', function (e) {
+      e.stopPropagation(); // Evitar que el click del label active el header
+    });
+  });
+
+
+  // Sincronizar checkboxes con secciones
+  document.getElementById('toggleDiesel')?.addEventListener('change', function () {
+    document.getElementById('dieselSection').classList.toggle('active', this.checked);
+    this.closest('.card-header-toggle').classList.toggle('active', this.checked);
+  });
+
+  document.getElementById('toggleParts')?.addEventListener('change', function () {
+    document.getElementById('partsSection').classList.toggle('active', this.checked);
+    this.closest('.card-header-toggle').classList.toggle('active', this.checked);
+  });
+
+  document.getElementById('toggleService')?.addEventListener('change', function () {
+    document.getElementById('serviceSection').classList.toggle('active', this.checked);
+    this.closest('.card-header-toggle').classList.toggle('active', this.checked);
+  });
+
+  // ==========================================
+  // LÓGICA DE DIESEL Y DISPERSIÓN
+  // ==========================================
+  let dispersionList = [];
+  let totalLitresBought = 0;
+
+  function calcDiesel() {
+    const type = document.getElementById('diesel_type').value;
+    const amount = parseFloat(document.getElementById('diesel_amount').value) || 0;
+    const price = parseFloat(document.getElementById('diesel_price_per_liter').value) || 0;
+
+    let totalCost = 0;
+    let totalLitres = 0;
+
+    if (type === 'litros') {
+      totalLitres = amount;
+      totalCost = amount * price;
+      document.getElementById('diesel_total_cost').value = totalCost.toFixed(2);
+    } else {
+      // Por pesos
+      totalCost = amount;
+      document.getElementById('diesel_total_cost').value = totalCost.toFixed(2);
+      if (price > 0) {
+        totalLitres = amount / price;
+      }
+    }
+
+    totalLitresBought = totalLitres;
+    document.getElementById('diesel_total_liters_display').value = totalLitres.toFixed(2);
+
+    updateDispersionUI();
+  }
+
+  function addDispersion() {
+    const unitSelect = document.getElementById('disp_unit_select');
+    const unitId = unitSelect.value;
+    const unitName = unitSelect.options[unitSelect.selectedIndex].text;
+    const liters = parseFloat(document.getElementById('disp_liters_input').value) || 0;
+    const datetime = document.getElementById('disp_datetime_input').value;
+
+    if (!unitId || liters <= 0) {
+      alert("Selecciona una unidad y una cantidad válida.");
+      return;
+    }
+
+    if (!datetime) {
+      alert("Selecciona la fecha y hora de la dispersión.");
+      return;
+    }
+
+    // Cada dispersión es un registro separado (incluso si es la misma unidad)
+    dispersionList.push({
+      unit_id: unitId,
+      unit_name: unitName,
+      liters: liters,
+      datetime: datetime
+    });
+
+    // Limpiar inputs
+    unitSelect.value = "";
+    document.getElementById('disp_liters_input').value = "";
+    document.getElementById('disp_datetime_input').value = "";
+
+    updateDispersionUI();
+  }
+
+  function removeDispersion(index) {
+    dispersionList.splice(index, 1);
+    updateDispersionUI();
+  }
+
+  function updateDispersionUI() {
+    const listContainer = document.getElementById('dispersion_list');
+    listContainer.innerHTML = "";
+
+    let totalAssigned = 0;
+
+    dispersionList.forEach((item, index) => {
+      totalAssigned += item.liters;
+
+      // Formatear fecha y hora para mostrar
+      const dt = new Date(item.datetime);
+      const formattedDate = dt.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
+      const formattedTime = dt.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+
+      const div = document.createElement('div');
+      div.style.cssText = "display: flex; justify-content: space-between; align-items: center; background: white; padding: 0.8rem 1rem; border-radius: 8px; border: 1px solid var(--border); flex-wrap: wrap; gap: 0.5rem;";
+      div.innerHTML = `
+            <div style="display: flex; flex-direction: column; gap: 0.2rem;">
+                <span style="font-weight: 600;">${item.unit_name}</span>
+                <span style="font-size: 0.85rem; color: var(--text-muted);">📅 ${formattedDate} • 🕐 ${formattedTime}</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <span style="font-weight: bold; color: var(--primary);">${item.liters.toFixed(2)} L</span>
+                <button type="button" onclick="removeDispersion(${index})" style="background: none; border: none; color: var(--danger); cursor: pointer; font-weight: bold;">✕</button>
+            </div>
+        `;
+      listContainer.appendChild(div);
+    });
+
+    // Actualizar totales
+    document.getElementById('disp_total').textContent = totalLitresBought.toFixed(2) + " L";
+    document.getElementById('disp_assigned').textContent = totalAssigned.toFixed(2) + " L";
+
+    const remaining = totalLitresBought - totalAssigned;
+    const remEl = document.getElementById('disp_remaining');
+    remEl.textContent = remaining.toFixed(2) + " L";
+
+    if (remaining < 0) {
+      remEl.style.color = "var(--danger)";
+    } else {
+      remEl.style.color = "var(--warning)";
+    }
+
+    // Actualizar input oculto
+    document.getElementById('diesel_dispersion_data').value = JSON.stringify(dispersionList);
+  }
+
+  // Validación Bootstrap
+  (function () {
+    'use strict'
+    const forms = document.querySelectorAll('.needs-validation')
+    Array.prototype.slice.call(forms).forEach(function (form) {
+      form.addEventListener('submit', function (event) {
+        if (!form.checkValidity()) {
+          event.preventDefault()
+          event.stopPropagation()
+        }
+        form.classList.add('was-validated')
+      }, false)
+    })
+  })()
+</script>
+{% endblock %}

@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="dashboard">
+  <header class="dash-head">
+    <div>
+      <h1 class="title">Obras / Proyectos</h1>
+      <p class="subtitle">Administra las obras que aparecen en los registros.</p>
+    </div>
+    <div class="dash-actions">
+      <a class="btn btn-primary" href="{{ url_for('admin.dashboard') }}">Volver al dashboard</a>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2 class="mini-card-title">Nueva obra</h2>
+    <form method="post" class="smart-form grid-3">
+      <label>
+        Nombre de la obra * <span class="req"></span>
+        <input type="text" name="name" placeholder="Ej. Ampliación Nave A" required>
+      </label>
+      <label>
+        Clave / Código
+        <input type="text" name="code" placeholder="Ej. OBR-001">
+      </label>
+      <label>
+        Ubicación
+        <input type="text" name="location" placeholder="Ej. Parque Industrial Norte">
+      </label>
+
+      <!-- NUEVO: Cliente -->
+      <label>
+        Cliente
+        <select name="client_id">
+          <option value="">— Selecciona cliente —</option>
+          {% for c in clients or [] %}
+            <option value="{{ c.id }}">{{ c.name }}</option>
+          {% endfor %}
+        </select>
+        <small class="help">Si aún no existe, créalo en el catálogo de clientes (próximamente).</small>
+      </label>
+
+      <div class="full" style="display:flex;align-items:center;gap:10px;margin-top:6px">
+        <label style="display:flex;align-items:center;gap:8px">
+          <input type="checkbox" name="active" value="1" checked> Activa
+        </label>
+        <button type="submit" class="btn btn-primary">Guardar obra</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="card" style="margin-top:12px">
+    <h2 class="mini-card-title">Listado</h2>
+    {% if projects %}
+    <div class="table-wrap">
+      <table class="table">
+        <thead class="sticky">
+          <tr>
+            <th>Nombre</th>
+            <th>Cliente</th>
+            <th>Clave</th>
+            <th>Ubicación</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in projects %}
+          <tr>
+            <td>{{ p.name }}</td>
+            <td>{{ p.client.name if p.client else '—' }}</td>
+            <td>{{ p.code or '—' }}</td>
+            <td>{{ p.location or '—' }}</td>
+            <td>
+              {% if p.active %}
+                <span class="badge green">Activa</span>
+              {% else %}
+                <span class="badge">Inactiva</span>
+              {% endif %}
+            </td>
+            <td class="nowrap">
+              <form method="post" action="{{ url_for('admin.project_toggle', pid=p.id) }}" style="display:inline">
+                <button class="btn subtle" type="submit">{{ 'Desactivar' if p.active else 'Activar' }}</button>
+              </form>
+              <form method="post" action="{{ url_for('admin.project_delete', pid=p.id) }}" style="display:inline" onsubmit="return confirm('¿Eliminar esta obra?');">
+                <button class="btn subtle" type="submit">Eliminar</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+      <div class="empty"><div class="empty-emoji">📭</div><p>Aún no hay obras registradas.</p></div>
+    {% endif %}
+  </section>
+</section>
+{% endblock %}

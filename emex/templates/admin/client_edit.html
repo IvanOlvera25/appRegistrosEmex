@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block page_title %}Editar cliente{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 880px;">
+  <div class="card">
+    <div class="card-header d-flex align-items-center justify-content-between">
+      <strong>Editar cliente</strong>
+      <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('admin.clients') }}">
+        <i class="fas fa-arrow-left me-1"></i>Volver
+      </a>
+    </div>
+    <div class="card-body">
+      <form method="post" action="{{ url_for('admin.clients_update_form', cid=client.id) }}">
+        <div class="row g-3">
+          <div class="col-md-8">
+            <label class="form-label">Nombre/Razón social *</label>
+            <input type="text" class="form-control" name="name" value="{{ client.name }}" required>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">RFC</label>
+            <input type="text" class="form-control" name="tax_id" value="{{ client.tax_id or '' }}">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Persona de contacto</label>
+            <input type="text" class="form-control" name="contact_name" value="{{ client.contact_name or '' }}">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Email</label>
+            <input type="email" class="form-control" name="email" value="{{ client.email or '' }}">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Teléfono</label>
+            <input type="text" class="form-control" name="phone" value="{{ client.phone or '' }}">
+          </div>
+          <div class="col-12">
+            <label class="form-label">Notas</label>
+            <textarea class="form-control" name="notes" rows="3">{{ client.notes or '' }}</textarea>
+          </div>
+        </div>
+        <div class="mt-3 d-flex gap-2">
+          <button class="btn btn-primary" type="submit"><i class="fas fa-save me-1"></i>Guardar cambios</button>
+          <a class="btn btn-outline-secondary" href="{{ url_for('admin.clients') }}">Cancelar</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

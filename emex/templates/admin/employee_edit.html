@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+:root{--primary:#1e40af; --primary-2:#3b82f6; --bg:#f5f7fb; --card:#ffffff; --text:#0f172a; --muted:#64748b; --border:#e5e9f2; --ring:rgba(30,64,175,.12)}
+.page{min-height:100vh;background:var(--bg)}
+.hero{background:linear-gradient(135deg,var(--primary),var(--primary-2));color:#fff;border-radius:18px;padding:22px 26px;margin:22px 0}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px;box-shadow:0 12px 30px rgba(2,6,23,.06)}
+.control{display:flex;flex-direction:column;gap:8px}
+.label{font-weight:700;color:var(--muted);text-transform:uppercase;font-size:.8rem;letter-spacing:.04em}
+.input{width:100%;padding:14px;border:2px solid var(--border);border-radius:12px;background:#fbfcfe}
+.input:focus{border-color:var(--primary);box-shadow:0 0 0 6px var(--ring);outline:0;background:#fff}
+.btn-lg{padding:.75rem 1.2rem;border-radius:12px;font-weight:700}
+.btn-ghost{background:#fff;border:2px solid var(--border)}
+.btn-outline-danger{border:2px solid #fecaca;color:#991b1b;border-radius:12px}
+.btn-outline-danger:hover{background:#fee2e2;border-color:#fecaca}
+</style>
+
+<div class="container page py-3">
+  <div class="hero d-flex justify-content-between align-items-center flex-wrap">
+    <div>
+      <h1 class="h4 mb-1 fw-bold">Editar empleado</h1>
+      <div class="opacity-75">{{ emp.name }} · {{ emp.email }}</div>
+    </div>
+    <div><a class="btn btn-light btn-lg" href="{{ url_for('admin.employees_catalog') }}">← Catálogo</a></div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <div class="card">
+        <form id="f" onsubmit="save(event)">
+          <input type="hidden" id="uid" value="{{ emp.id }}">
+          <div class="control mb-3">
+            <label class="label">Nombre *</label>
+            <input id="name" class="input" value="{{ emp.name }}" required>
+          </div>
+          <div class="control mb-3">
+            <label class="label">Cargo</label>
+            <input id="job_title" class="input" value="{{ emp.job_title or '' }}">
+          </div>
+          <div class="control mb-3">
+            <label class="label">Correo *</label>
+            <input id="email" type="email" class="input" value="{{ emp.email }}" required>
+          </div>
+
+          <div id="err" class="text-danger mb-2" style="display:none"></div>
+          <div class="d-flex gap-2">
+            <a class="btn btn-ghost btn-lg" href="{{ url_for('admin.employees_catalog') }}">Cancelar</a>
+            <button class="btn btn-primary btn-lg" type="submit">Guardar cambios</button>
+            <button class="btn btn-outline-danger btn-lg ms-auto" type="button" onclick="delEmp()">Eliminar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function save(e){
+  e.preventDefault();
+  const id = document.getElementById('uid').value;
+  const payload = {
+    name: document.getElementById('name').value.trim(),
+    job_title: document.getElementById('job_title').value.trim(),
+    email: document.getElementById('email').value.trim()
+  };
+  const err = document.getElementById('err');
+  if(!payload.name || !payload.email){ err.textContent='Nombre y correo son obligatorios.'; err.style.display='block'; return; }
+
+  fetch(`{{ url_for("admin.api_employees_update", user_id=0)[:-1] }}${id}`, {
+    method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)
+  })
+  .then(r=>r.json()).then(d=>{
+    if(!d.success) throw new Error(d.error || 'No se pudo actualizar');
+    window.location.href='{{ url_for("admin.employees_catalog") }}';
+  }).catch(e=>{ err.textContent = e.message; err.style.display='block'; });
+}
+
+function delEmp(){
+  if(!confirm('¿Eliminar este empleado?')) return;
+  const id = document.getElementById('uid').value;
+  const err = document.getElementById('err');
+  fetch(`{{ url_for("admin.api_employees_delete", user_id=0)[:-1] }}${id}`, { method:'DELETE' })
+    .then(r=>r.json())
+    .then(d=>{
+      if(!d.success){ err.textContent = d.message || d.error || 'No se pudo eliminar'; err.style.display='block'; return; }
+      window.location.href='{{ url_for("admin.employees_catalog") }}';
+    })
+    .catch(()=>{ err.textContent='Error de red'; err.style.display='block'; });
+}
+</script>
+{% endblock %}

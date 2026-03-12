@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+  :root{ --primary:#1e40af; --primary-2:#3b82f6; --bg:#f5f7fb; --card:#fff; --text:#0f172a; --muted:#64748b; --border:#e5e9f2; --shadow:0 12px 30px rgba(2,6,23,.06) }
+  .wrap{min-height:100vh;background:var(--bg);padding:24px}
+  .hero{background:linear-gradient(135deg,var(--primary),var(--primary-2));color:#fff;border-radius:18px;padding:22px 26px;margin-bottom:18px;box-shadow:var(--shadow)}
+  .tabs{display:flex;gap:.5rem;background:#ffffff22;border-radius:10px;padding:4px}
+  .tab{padding:.45rem 1rem;border-radius:8px;border:none;background:transparent;color:#fff;font-weight:700}
+  .tab.active{background:#fff;color:var(--primary)}
+  .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:12px 0 16px}
+  .kpi{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;box-shadow:var(--shadow)}
+  .kpi .label{color:var(--muted);text-transform:uppercase;font-weight:700;font-size:.8rem}
+  .kpi .value{font-weight:800;font-size:1.5rem}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;box-shadow:var(--shadow)}
+  table{width:100%;border-collapse:collapse}
+  th{font-size:.82rem;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;text-align:left;padding:.7rem;border-bottom:1px solid var(--border)}
+  td{padding:.7rem;border-bottom:1px solid var(--border);vertical-align:middle}
+</style>
+
+<div class="wrap">
+  <div class="hero d-flex justify-content-between align-items-center flex-wrap">
+    <div>
+      <h1 class="h4 mb-1 fw-bold">{{ detail.name }}</h1>
+      <div class="opacity-75">{{ detail.email }} · Rol: {{ user.role }}</div>
+      <div class="opacity-75">Del {{ start.strftime("%Y-%m-%d") }} al {{ end.strftime("%Y-%m-%d") }}</div>
+    </div>
+    <div class="tabs">
+      {% set p = period %}
+      <a class="tab {{ 'week'==p and 'active' or '' }}" href="{{ url_for('admin.employee_detail', user_id=user.id, period='week') }}">Semanal</a>
+      <a class="tab {{ 'month'==p and 'active' or '' }}" href="{{ url_for('admin.employee_detail', user_id=user.id, period='month') }}">Mensual</a>
+      <a class="tab {{ 'quarter'==p and 'active' or '' }}" href="{{ url_for('admin.employee_detail', user_id=user.id, period='quarter') }}">Trimestral</a>
+      <a class="btn btn-light ms-2" href="{{ url_for('admin.employees', period=p) }}">← Volver</a>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-grid">
+    <div class="kpi"><div class="label">Horas</div><div class="value">{{ "{:,.1f}".format(detail.hours) }}</div></div>
+    <div class="kpi"><div class="label">Productivas</div><div class="value">{{ "{:,.1f}".format(detail.prod) }}</div></div>
+    <div class="kpi"><div class="label">Rendimiento</div><div class="value">{{ "{:.1f}".format(detail.perf) }}%</div></div>
+    <div class="kpi"><div class="label">Horas extra</div><div class="value">{{ "{:,.1f}".format(detail.overtime) }}</div></div>
+    <div class="kpi"><div class="label">Incidencias</div><div class="value">{{ "{:,}".format(detail.incidents) }}</div></div>
+    <div class="kpi"><div class="label">Ventas</div><div class="value">${{ "{:,.2f}".format(detail.sales) }}</div></div>
+    <div class="kpi"><div class="label">Costos</div><div class="value">${{ "{:,.2f}".format(detail.costs) }}</div></div>
+    <div class="kpi"><div class="label">Utilidad</div><div class="value">${{ "{:,.2f}".format(detail.utility) }}</div></div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-lg-7">
+      <div class="card">
+        <div class="fw-bold mb-2">Tendencia diaria</div>
+        <div style="height:300px"><canvas id="detailChart"></canvas></div>
+      </div>
+    </div>
+    <div class="col-lg-5">
+      <div class="card">
+        <div class="fw-bold mb-2">Últimos registros</div>
+        <div class="table-responsive">
+          <table>
+            <thead><tr><th>Fecha</th><th>Proyecto</th><th>Ruta</th><th>Hrs</th><th>Prod</th><th>Ext</th><th>Comb</th><th>S/I</th><th>Venta</th></tr></thead>
+            <tbody>
+              {% for r in last_rows %}
+              <tr>
+                <td>{{ r.date }}</td><td>{{ r.project }}</td><td>{{ r.route }}</td>
+                <td>{{ "{:.1f}".format(r.hours) }}</td>
+                <td>{{ "{:.1f}".format(r.prod) }}</td>
+                <td>{{ "{:.1f}".format(r.ot) }}</td>
+                <td>{{ "{:.0f}".format(r.fuel) }} L</td>
+                <td>${{ "{:,.2f}".format(r.service) }}</td>
+                <td>${{ "{:,.2f}".format(r.sale) }}</td>
+              </tr>
+              {% else %}
+              <tr><td colspan="9" class="text-muted text-center">Sin registros</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const labels = {{ labels|tojson }};
+const prod = {{ prod_data|tojson }};
+const ot = {{ ot_data|tojson }};
+const ctx = document.getElementById('detailChart').getContext('2d');
+new Chart(ctx,{
+  type:'bar',
+  data:{
+    labels,
+    datasets:[
+      {type:'line', label:'Horas productivas', data:prod, borderColor:'#3b82f6', backgroundColor:'rgba(59,130,246,.15)', tension:.35, yAxisID:'y'},
+      {type:'bar', label:'Horas extra', data:ot, backgroundColor:'rgba(16,185,129,.35)', yAxisID:'y'},
+    ]
+  },
+  options:{ responsive:true, maintainAspectRatio:false,
+    scales:{ y:{beginAtZero:true} }, plugins:{legend:{display:true}} }
+});
+</script>
+
+{% endblock %}

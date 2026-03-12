@@ -1,0 +1,285 @@
+{% extends "base.html" %}
+{% block page_title %}Clientes{% endblock %}
+
+{% block head_extra %}
+<style>
+  /* ======= Design tokens locales ======= */
+  :root{
+    --emx-bg:#f6f8fb;
+    --emx-card:#ffffff;
+    --emx-text:#0f172a;
+    --emx-muted:#64748b;
+    --emx-border:#e2e8f0;
+    --emx-primary:#1e40af;
+    --emx-primary-2:#3b82f6;
+    --emx-accent:#ff6a00;
+    --emx-success:#059669;
+    --emx-danger:#dc2626;
+    --emx-warning:#f59e0b;
+    --emx-radius:14px;
+    --emx-shadow-sm:0 1px 2px rgba(2,6,23,.06);
+    --emx-shadow-md:0 10px 30px rgba(2,6,23,.08);
+  }
+
+  /* ======= Layout ======= */
+  .clients-wrap{
+    background:var(--emx-bg);
+    padding:1rem;
+    border-radius:var(--emx-radius);
+  }
+
+  .card{
+    background:var(--emx-card);
+    border:1px solid var(--emx-border);
+    border-radius:var(--emx-radius);
+    box-shadow:var(--emx-shadow-sm);
+  }
+  .card-header{
+    padding:.85rem 1rem;
+    border-bottom:1px solid var(--emx-border);
+    background:linear-gradient(180deg,#fff, #fafbff);
+    border-top-left-radius:var(--emx-radius);
+    border-top-right-radius:var(--emx-radius);
+    font-weight:700; color:var(--emx-text);
+  }
+  .card-body{ padding:1rem; }
+
+  /* ======= Tipografía / utilidades ======= */
+  h4{ font-weight:800; color:var(--emx-text); }
+  .text-muted{ color:var(--emx-muted)!important; }
+
+  /* ======= Form ======= */
+  .form-label{ font-weight:600; color:var(--emx-text); }
+  .form-control, .form-select, textarea{
+    width:100%;
+    border:1px solid var(--emx-border);
+    border-radius:10px;
+    padding:.55rem .75rem;
+    background:#fff;
+    color:var(--emx-text);
+    outline:none;
+    transition: box-shadow .15s, border-color .15s;
+  }
+  .form-control:focus, .form-select:focus, textarea:focus{
+    border-color:var(--emx-primary-2);
+    box-shadow:0 0 0 .2rem rgba(59,130,246,.12);
+  }
+  .help-line{ font-size:.85rem; color:var(--emx-muted); }
+
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center;
+    gap:.4rem;
+    border-radius:10px; border:1px solid transparent;
+    padding:.55rem .9rem; font-weight:700; cursor:pointer;
+    transition:transform .06s ease, box-shadow .2s ease, background .2s ease;
+  }
+  .btn:active{ transform:translateY(1px); }
+  .btn-primary{
+    background:linear-gradient(135deg,var(--emx-accent), #ff8740);
+    color:#fff; box-shadow:var(--emx-shadow-sm);
+  }
+  .btn-outline-primary{
+    background:#fff; color:var(--emx-primary);
+    border-color:var(--emx-primary-2);
+  }
+  .btn-outline-danger{
+    background:#fff; color:var(--emx-danger);
+    border-color:#fecaca;
+  }
+  .btn-warning{
+    background:#fff7ed; color:#c2410c; border-color:#fed7aa;
+  }
+  .btn-sm{ padding:.4rem .6rem; border-radius:8px; font-weight:700; }
+  .btn-group{ display:flex; gap:.4rem; }
+
+  /* ======= Búsqueda top ======= */
+  .topbar{
+    display:flex; gap:.6rem; align-items:center; justify-content:space-between;
+    margin-bottom:.8rem;
+  }
+  .searchbar{ display:flex; gap:.5rem; align-items:center; }
+  .searchbar input{
+    width:260px;
+  }
+
+  /* ======= Tabla ======= */
+  .table{
+    width:100%;
+    border-collapse:separate;
+    border-spacing:0;
+  }
+  .table thead th{
+    position:sticky; top:0; z-index:2;
+    background:#f9fbff; color:#0b1a3a; font-weight:800;
+    border-bottom:1px solid var(--emx-border);
+    padding:.75rem .8rem;
+  }
+  .table tbody td{
+    padding:.8rem; border-bottom:1px solid var(--emx-border); color:var(--emx-text);
+  }
+  .table tr:hover td{ background:#fafcff; }
+  .table .badge{
+    display:inline-block; min-width:1.7rem; text-align:center;
+    padding:.25rem .5rem; border-radius:999px; font-weight:800;
+    background:#eef2ff; color:#3730a3; border:1px solid #e0e7ff;
+  }
+
+  /* ======= Grid ======= */
+  .grid{
+    display:grid; gap:1rem;
+    grid-template-columns: 1fr 2fr;
+  }
+  @media (max-width: 992px){
+    .grid{ grid-template-columns:1fr; }
+  }
+
+  /* ======= Espaciados ======= */
+  .mb-0{ margin-bottom:0!important; }
+  .mb-1{ margin-bottom:.25rem!important; }
+  .mb-2{ margin-bottom:.5rem!important; }
+  .mb-3{ margin-bottom:.75rem!important; }
+  .mt-1{ margin-top:.25rem!important; }
+  .mt-2{ margin-top:.5rem!important; }
+  .w-100{ width:100%!important; }
+
+  /* ======= Contador de notas ======= */
+  .notes-counter{
+    font-size:.8rem; color:var(--emx-muted);
+    display:flex; justify-content:flex-end; margin-top:.15rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="clients-wrap">
+  <div class="topbar">
+    <h4 class="mb-0"><i class="fas fa-user-tie me-2"></i>Clientes</h4>
+    <form class="searchbar" method="get" action="{{ url_for('admin.clients') }}">
+      <input class="form-control" type="search" name="q" placeholder="Buscar por nombre, RFC, contacto, email..." value="{{ q or '' }}">
+      <button class="btn btn-outline-primary" type="submit">
+        <i class="fas fa-search"></i><span>Buscar</span>
+      </button>
+    </form>
+  </div>
+
+  <div class="grid">
+    <!-- Columna formulario -->
+    <div class="card">
+      <div class="card-header">Nuevo cliente</div>
+      <div class="card-body">
+        <form method="post" action="{{ url_for('admin.clients') }}">
+          <div class="mb-2">
+            <label class="form-label">Nombre/Razón social *</label>
+            <input type="text" class="form-control" name="name" required>
+          </div>
+          <div class="mb-2">
+            <label class="form-label">RFC</label>
+            <input type="text" class="form-control" name="tax_id">
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Contacto</label>
+            <input type="text" class="form-control" name="contact_name">
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Email</label>
+            <input type="email" class="form-control" name="email">
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Teléfono</label>
+            <input type="text" class="form-control" name="phone">
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Notas</label>
+            <textarea class="form-control" name="notes" rows="3" maxlength="300" id="notesField"></textarea>
+            <div class="notes-counter"><span id="notesCount">0</span>/300</div>
+          </div>
+          <button class="btn btn-primary w-100" type="submit">
+            <i class="fas fa-save"></i><span>Guardar</span>
+          </button>
+        </form>
+        <div class="help-line mt-2">* El nombre del cliente debe ser único.</div>
+      </div>
+    </div>
+
+    <!-- Columna listado -->
+    <div class="card">
+      <div class="card-header">Lista de clientes</div>
+      <div class="card-body" style="padding:0">
+        <div class="table-responsive" style="max-height:68vh; overflow:auto;">
+          <table class="table align-middle mb-0">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>RFC</th>
+                <th>Contacto</th>
+                <th>Email</th>
+                <th>Teléfono</th>
+                <th class="text-center">Proyectos</th>
+                <th style="width: 160px;">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for c in clients %}
+              <tr>
+                <td style="font-weight:700">{{ c.name }}</td>
+                <td>{{ c.tax_id or '—' }}</td>
+                <td>{{ c.contact_name or '—' }}</td>
+                <td>{{ c.email or '—' }}</td>
+                <td>{{ c.phone or '—' }}</td>
+                <td class="text-center">
+                  {% set pc = proj_counts.get(c.id, 0) if proj_counts else 0 %}
+                  <span class="badge">{{ pc }}</span>
+                </td>
+                <td>
+                  <div class="btn-group" role="group" aria-label="Acciones">
+                    <a class="btn btn-outline-primary btn-sm" href="{{ url_for('admin.clients_edit', cid=c.id) }}">
+                      <i class="fas fa-edit"></i><span> Editar</span>
+                    </a>
+                    <form method="post" action="{{ url_for('admin.clients_delete', cid=c.id) }}"
+                          onsubmit="return confirm('¿Eliminar cliente?');">
+                      <input type="hidden" name="detach" value="">
+                      <button class="btn btn-outline-danger btn-sm" type="submit">
+                        <i class="fas fa-trash"></i><span> Borrar</span>
+                      </button>
+                    </form>
+                  </div>
+                  {% if proj_counts and proj_counts.get(c.id, 0) > 0 %}
+                  <form class="mt-1" method="post" action="{{ url_for('admin.clients_delete', cid=c.id) }}"
+                        onsubmit="return confirm('Este cliente tiene proyectos ligados. Se van a DESLIGAR (client_id=NULL) y luego eliminar el cliente. ¿Continuar?');">
+                    <input type="hidden" name="detach" value="1">
+                    <button class="btn btn-warning btn-sm w-100" type="submit">
+                      <i class="fas fa-unlink"></i><span> Desligar y eliminar</span>
+                    </button>
+                  </form>
+                  {% endif %}
+                </td>
+              </tr>
+              {% else %}
+              <tr>
+                <td colspan="7" class="text-muted" style="text-align:center; padding:2rem;">
+                  Sin clientes registrados.
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Contador de caracteres para Notas
+  const notes = document.getElementById('notesField');
+  const counter = document.getElementById('notesCount');
+  if (notes && counter){
+    const updateCount = () => { counter.textContent = notes.value.length; };
+    notes.addEventListener('input', updateCount);
+    updateCount();
+  }
+</script>
+{% endblock %}

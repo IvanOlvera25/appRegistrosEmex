@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}Compras de Combustible{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">⛽ Compras de Combustible</h1>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Historial de Compras</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Fecha</th>
+                            <th>Proveedor / Notas</th>
+                            <th>Litros Comprados</th>
+                            <th>Costo Total</th>
+                            <th>Dispersado</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for fp in purchases %}
+                        <tr>
+                            <td>{{ fp.id }}</td>
+                            <td>{{ fp.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>{{ fp.provider or '—' }}</td>
+                            <td>{{ "{:,.2f}".format(fp.liters_bought) }} L</td>
+                            <td>${{ "{:,.2f}".format(fp.total_cost) }}</td>
+                            <td>
+                                {{ "{:,.2f}".format(fp.liters_dispersed or 0) }} L
+                                <div class="progress mt-1" style="height: 5px;">
+                                    {% set pct = (fp.liters_dispersed / fp.liters_bought * 100) if fp.liters_bought > 0
+                                    else 0 %}
+                                    <div class="progress-bar bg-info" role="progressbar" style="width: {{ pct }}%">
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                {% if fp.status == 'dispersado' %}
+                                <span class="badge bg-success">Completado</span>
+                                {% elif fp.status == 'parcial' %}
+                                <span class="badge bg-warning text-dark">Parcial</span>
+                                {% else %}
+                                <span class="badge bg-danger">Pendiente</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('admin.fuel_purchase_detail', fp_id=fp.id) }}"
+                                    class="btn btn-sm btn-info">
+                                    Ver Detalle
+                                </a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="8" class="text-center text-muted py-4">No hay compras registradas.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Paginación simple -->
+            {% if pagination.pages > 1 %}
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if pagination.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link"
+                            href="{{ url_for('admin.fuel_purchases', page=pagination.prev_num) }}">Anterior</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled"><span class="page-link">Anterior</span></li>
+                    {% endif %}
+
+                    <li class="page-item disabled">
+                        <span class="page-link">Página {{ pagination.page }} de {{ pagination.pages }}</span>
+                    </li>
+
+                    {% if pagination.has_next %}
+                    <li class="page-item">
+                        <a class="page-link"
+                            href="{{ url_for('admin.fuel_purchases', page=pagination.next_num) }}">Siguiente</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled"><span class="page-link">Siguiente</span></li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
