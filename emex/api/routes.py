@@ -44,8 +44,20 @@ def evolution_webhook():
     user = User.query.filter_by(phone=phone_number).first()
     
     if not user:
-        print(f"Número no registrado intentando usar el bot: {phone_number}")
-        return jsonify({"status": "unauthorized"}), 200
+        # Modo abierto: Crear un usuario genérico en el momento si no existe
+        print(f"Nuevo usuario contactó por WhatsApp: {phone_number}. Creando perfil temporal...")
+        user = User.query.filter_by(phone="whatsapp_temporal").first()
+        
+        if not user:
+            # Si ni siquiera existe el genérico, lo creamos
+            user = User(
+                name=f"Usuario Anónimo ({phone_number})",
+                phone="whatsapp_temporal",
+                password_hash="temp",
+                role="worker"
+            )
+            db.session.add(user)
+            db.session.commit()
 
     session = WhatsappSession.query.filter_by(phone=phone_number).first()
     if not session:
