@@ -1,0 +1,19 @@
+# Entornos virtuales
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
+
+# Variables de entorno y secretos
+.env
+.env.local
+
+# Bases de datos locales
+instance/
+*.sqlite3
+*.db
+
+# Archivos del sistema
+.DS_Store
+__MACOSX/
