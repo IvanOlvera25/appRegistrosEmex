@@ -5,7 +5,7 @@ from flask import Blueprint, request, jsonify
 
 from ..extensions import db
 from ..models import User, WhatsappSession, OperatorLog, Unit, FuelPurchase
-from .evolution_client import send_whatsapp_message, resolve_lid_to_phone
+from .evolution_client import send_whatsapp_message
 from .openai_service import process_whatsapp_message
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
@@ -14,53 +14,56 @@ api_bp = Blueprint("api", __name__, url_prefix="/api")
 def evolution_webhook():
     data = request.json
     
-    event_type = data.get("event")
-    # Aceptar variaciones comunes en el nombre del evento
-    if event_type not in ["messages.upsert", "MESSAGES_UPSERT"]:
+    event_type = data.get("event", "")
+    
+    # WAHA usa "message", Evolution API usa "messages.upsert" / "MESSAGES_UPSERT"
+    is_waha = event_type == "message"
+    is_evolution = event_type in ["messages.upsert", "MESSAGES_UPSERT"]
+    
+    if not is_waha and not is_evolution:
         return jsonify({"status": "ignored", "reason": f"not a message event ({event_type})"}), 200
-        
-    # En la versión 2.x, el payload viene dentro de "data"
-    inner_data = data.get("data", {}) if "data" in data else data
     
-    # Extraer identificadores que están al nivel de "data"
-    remote_jid = inner_data.get("key", {}).get("remoteJid", "")
-    from_me = inner_data.get("key", {}).get("fromMe", False)
-    
-    if "@g.us" in remote_jid:
-        return jsonify({"status": "ignored", "reason": "group message"}), 200
+    if is_waha:
+        # WAHA format: {"event": "message", "payload": {...}}
+        payload = data.get("payload", {})
+        from_me = payload.get("fromMe", False)
+        if from_me:
+            return jsonify({"status": "ignored", "reason": "sent by me"}), 200
         
-    if from_me:
-        return jsonify({"status": "ignored", "reason": "sent by me"}), 200
-
-    # Resolver LID a número real si es necesario
-    if "@lid" in remote_jid:
-        # Intentar resolver LID via API de contactos
-        resolved = resolve_lid_to_phone(remote_jid)
-        if resolved:
-            phone_number = resolved
-            print(f"[LID Resolved] {remote_jid} -> {phone_number}")
-        else:
-            # Loguear el payload completo para debug
-            print(f"[LID NOT RESOLVED] remoteJid={remote_jid}, full payload keys={list(data.keys())}, inner keys={list(inner_data.keys())}")
-            print(f"[LID DEBUG] pushName={inner_data.get('pushName')}, participant={inner_data.get('key',{}).get('participant')}")
-            phone_number = remote_jid.split("@")[0]
+        # chat_id es el identificador completo (puede ser LID o @c.us)
+        chat_id = payload.get("from", "")
+        
+        # Ignorar grupos
+        if "@g.us" in chat_id:
+            return jsonify({"status": "ignored", "reason": "group message"}), 200
+        
+        phone_number = chat_id.split("@")[0]
+        text_content = (payload.get("body") or "").strip()
+        
+        print(f"[WAHA Webhook] from={chat_id}, text={text_content[:50]}")
     else:
+        # Evolution API format (backwards compat)
+        inner_data = data.get("data", {}) if "data" in data else data
+        remote_jid = inner_data.get("key", {}).get("remoteJid", "")
+        from_me = inner_data.get("key", {}).get("fromMe", False)
+        
+        if "@g.us" in remote_jid:
+            return jsonify({"status": "ignored", "reason": "group message"}), 200
+        if from_me:
+            return jsonify({"status": "ignored", "reason": "sent by me"}), 200
+        
+        chat_id = remote_jid
         phone_number = remote_jid.split("@")[0]
-    
-    # El objeto de mensaje en sí (qué contiene el texto, audio, etc)
-    msg_obj = inner_data.get("message", {})
-    
-    # Manejar los distintos tipos de mensajes de texto en WhatsApp
-    text_content = (
-        msg_obj.get("conversation") or 
-        msg_obj.get("extendedTextMessage", {}).get("text") or 
-        ""
-    )
+        
+        msg_obj = inner_data.get("message", {})
+        text_content = (
+            msg_obj.get("conversation") or 
+            msg_obj.get("extendedTextMessage", {}).get("text") or 
+            ""
+        ).strip()
     
     if not text_content:
         return jsonify({"status": "ignored", "reason": "empty text"}), 200
-        
-    text_content = text_content.strip()
 
     user = User.query.filter_by(phone=phone_number).first()
     
@@ -250,8 +253,8 @@ def evolution_webhook():
             reply_text = "❌ Hubo un error al intentar guardar tu registro en la base de datos."
 
 
-    # Enviar respuesta al usuario usando el número resuelto
-    print(f"[WhatsApp Reply] Sending to phone_number={phone_number}")
-    send_whatsapp_message(phone_number, reply_text)
+    # Enviar respuesta al usuario usando el chat_id completo (soporta LID en WAHA)
+    print(f"[WhatsApp Reply] Sending to chat_id={chat_id}")
+    send_whatsapp_message(chat_id, reply_text)
 
     return jsonify({"status": "success"}), 200
