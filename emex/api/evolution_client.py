@@ -22,21 +22,14 @@ def send_whatsapp_message(phone, text):
         "Content-Type": "application/json"
     }
     
-    # Evolution API usualmente espera el número con código de país, ej: "5215512345678"
-    # El número provisto debe venir pre-formateado.
+    # Evolution API v2.1.1 espera {number, text} directamente
     payload = {
         "number": phone,
-        "options": {
-            "delay": 1200,
-            "presence": "composing"
-        },
-        "textMessage": {
-            "text": text
-        }
+        "text": text
     }
     
     try:
-        response = requests.post(url, json=payload, headers=headers, timeout=10)
+        response = requests.post(url, json=payload, headers=headers, timeout=30)
         response.raise_for_status()
         return True
     except Exception as e:
