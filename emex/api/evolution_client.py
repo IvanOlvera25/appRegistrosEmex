@@ -22,16 +22,10 @@ def send_whatsapp_message(phone, text):
         "Content-Type": "application/json"
     }
     
-    # Evolution API v1.8.2 config format
+    # Evolution API v2.2.3 format
     payload = {
         "number": phone,
-        "options": {
-            "delay": 1200,
-            "presence": "composing"
-        },
-        "textMessage": {
-            "text": text
-        }
+        "text": text
     }
     
     try:
