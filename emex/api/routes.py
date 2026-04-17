@@ -1,5 +1,6 @@
 # emex/api/routes.py
 import json
+import time
 from datetime import datetime
 from flask import Blueprint, request, jsonify
 
@@ -9,6 +10,24 @@ from .evolution_client import send_whatsapp_message
 from .openai_service import process_whatsapp_message
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
+
+# Deduplicación: cache de IDs de mensajes ya procesados (evita respuestas duplicadas)
+_processed_msg_ids = {}
+_DEDUP_TTL = 120  # segundos que un ID se mantiene en cache
+
+def _is_duplicate(msg_id):
+    """Retorna True si el mensaje ya fue procesado. Lo marca como procesado."""
+    if not msg_id:
+        return False
+    now = time.time()
+    # Limpiar entradas viejas
+    expired = [k for k, v in _processed_msg_ids.items() if now - v > _DEDUP_TTL]
+    for k in expired:
+        del _processed_msg_ids[k]
+    if msg_id in _processed_msg_ids:
+        return True
+    _processed_msg_ids[msg_id] = now
+    return False
 
 @api_bp.route("/webhook/evolution", methods=["POST"])
 def evolution_webhook():
@@ -32,6 +51,11 @@ def evolution_webhook():
         
         # chat_id es el identificador completo (puede ser LID o @c.us)
         chat_id = payload.get("from", "")
+        msg_id = payload.get("id", {}).get("id", "") if isinstance(payload.get("id"), dict) else payload.get("id", "")
+        
+        # Deduplicación
+        if _is_duplicate(msg_id):
+            return jsonify({"status": "ignored", "reason": "duplicate"}), 200
         
         # Ignorar grupos
         if "@g.us" in chat_id:
@@ -40,7 +64,7 @@ def evolution_webhook():
         phone_number = chat_id.split("@")[0]
         text_content = (payload.get("body") or "").strip()
         
-        print(f"[WAHA Webhook] from={chat_id}, text={text_content[:50]}")
+        print(f"[WAHA Webhook] from={chat_id}, msgId={msg_id}, text={text_content[:50]}")
     else:
         # Evolution API format (backwards compat)
         inner_data = data.get("data", {}) if "data" in data else data
@@ -246,10 +270,13 @@ def evolution_webhook():
             session.context_data = "[]"
             db.session.commit()
 
-            reply_text = f"✅ Registro de *{role.capitalize()}* guardado exitosamente en el sistema EMEX."
+            # reply_text ya viene del openai_service con el mensaje de éxito
+            print(f"[Registro OK] Rol={role}, Nombre={worker_name}, Unidad={extracted_unit}")
 
         except Exception as e:
             print(f"Error al guardar log desde Whatsapp: {e}")
+            import traceback
+            traceback.print_exc()
             reply_text = "❌ Hubo un error al intentar guardar tu registro en la base de datos."
 
 

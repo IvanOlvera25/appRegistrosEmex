@@ -14,7 +14,7 @@ El sistema maneja 3 roles distintos: Operador, Chofer y Gestor de Compras.
 ## REGLAS PRINCIPALES:
 1. SI NO SABES EL ROL DEL USUARIO: Lo primero que debes hacer es saludar y preguntar: "¿Eres Operador, Chofer o Gestor de Compras?".
 2. UNA VEZ QUE CONOCES EL ROL: Debes pedirle los DATOS OBLIGATORIOS para su rol de forma amigable.
-3. Si en algún momento tienes TODOS los datos obligatorios, no pidas más información. Si tienes todos los obligatorios, genera EXCLUSIVAMENTE el JSON final.
+3. Si en algún momento tienes TODOS los datos obligatorios, MUESTRA UN RESUMEN FORMATEADO (NO JSON) y pide confirmación.
 
 ## DATOS POR ROL:
 
@@ -49,9 +49,31 @@ El sistema maneja 3 roles distintos: Operador, Chofer y Gestor de Compras.
 - Para Operador/Chofer: si no te dieron el dato de diesel, servicio o ruta, pregunta específicamente por esos campos.
 - Para Gestor de Compras: SOLO necesitas los 3 campos mencionados. No preguntes por horas, viajes ni rutas.
 
-## FORMATO DE RESPUESTA FINAL (SOLO CUANDO ESTÉ COMPLETO):
-Cuando tengas toda la información OBLIGATORIA para el rol identificado, DEBES responder ÚNICAMENTE con un bloque JSON.
-El bloque JSON DEBE empezar con `{` y terminar con `}` sin texto adicional antes ni después.
+## FLUJO CUANDO TIENES TODOS LOS DATOS:
+Cuando tengas toda la información OBLIGATORIA para el rol identificado, haz lo siguiente:
+
+1. MUESTRA UN RESUMEN BONITO al usuario con emojis, así:
+   "📋 *Resumen de tu registro:*
+   👤 Nombre: ...
+   🔧 Unidad: ...
+   ⛽ Diesel: ... litros
+   ⏱️ Horas/Viajes: ...
+   📝 Servicio/Incidencia: ...
+   📅 Fecha: ...
+   📍 Ruta/Lugar: ...
+   
+   ¿Los datos son correctos? Responde *Sí* o *No*."
+   
+2. NO generes JSON en este momento. Solo muestra el resumen y pregunta.
+
+## CUANDO EL USUARIO CONFIRME CON "Sí":
+SOLO cuando el usuario responda "Sí", "si", "correcto", "confirmo" o algo afirmativo,
+ENTONCES responde ÚNICAMENTE con el JSON final, sin texto antes ni después.
+El JSON DEBE empezar con `{` y terminar con `}`.
+
+Si el usuario dice "No" o quiere corregir algo, pregúntale qué dato quiere cambiar.
+
+## FORMATO JSON FINAL (SOLO TRAS CONFIRMACIÓN):
 
 Estructura del JSON para OPERADOR o CHOFER:
 {
@@ -79,7 +101,7 @@ Estructura del JSON para GESTOR DE COMPRAS:
 def process_whatsapp_message(session_context, new_message):
     """
     Toma el contexto de la sesión (historial de mensajes) y el nuevo mensaje.
-    Retorna (nueva_respuesta, datos_extraidos_json)
+    Retorna (nueva_respuesta, datos_extraidos_json, nuevo_contexto)
     """
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
     
@@ -97,12 +119,14 @@ def process_whatsapp_message(session_context, new_message):
         
         reply_content = response.choices[0].message.content.strip()
         
-        # Verificar si la respuesta es el JSON de completado
+        # Verificar si la respuesta es el JSON de completado (solo tras confirmación del usuario)
         if reply_content.startswith("{") and reply_content.endswith("}"):
             try:
                 extracted_data = json.loads(reply_content)
                 if extracted_data.get("complete"):
-                    return ("¡Registro procesado! Estoy guardando la información...", extracted_data, messages)
+                    # Agregar al historial y devolver datos para guardar
+                    messages.append({"role": "assistant", "content": reply_content})
+                    return ("✅ ¡Registro guardado exitosamente en el sistema EMEX! Escribe *hola* para hacer un nuevo registro.", extracted_data, messages[1:])
             except Exception as e:
                 pass # Falló al parsear el JSON, lo tratamos como respuesta de texto
                 
