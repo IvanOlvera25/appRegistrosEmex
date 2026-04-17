@@ -3,153 +3,432 @@
 
 {% block head_extra %}
 <style>
-  .role-chooser{display:flex;gap:14px;justify-content:center;margin:6px 0 18px}
-  .role-btn{
-    flex:1;max-width:260px;display:flex;align-items:center;justify-content:center;
-    gap:10px;padding:16px 18px;border-radius:16px;border:1px solid var(--line,#e6e6e6);
-    background:#fff;cursor:pointer;transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease;
-    box-shadow:0 1px 2px rgba(0,0,0,.04); font-weight:600;
+  /* ========== LOGIN PRO OVERHAUL ========== */
+  .login-page {
+    min-height: calc(100svh - 140px);
+    display: grid;
+    place-items: center;
+    padding: clamp(32px, 5vh, 60px) 16px;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+    border-radius: 0;
+    position: relative;
+    overflow: hidden;
   }
-  .role-btn .emoji{font-size:22px}
-  .role-btn.active{border-color:var(--primary,#3b82f6); box-shadow:0 6px 22px rgba(59,130,246,.18)}
-  .role-btn:hover{transform:translateY(-1px)}
-  .form-hidden{display:none}
-  .muted-center{text-align:center;color:var(--muted,#6b7280)}
-  .field.block label{display:block;margin:0 0 6px 2px;font-weight:600;color:#374151}
-  .field.block select{
-    width:100%; padding:12px 14px; border:1px solid #e5e7eb; border-radius:12px; background:#fff;
-    font-size:16px; outline:none;
+  .login-page::before {
+    content: "";
+    position: absolute;
+    top: -40%;
+    right: -20%;
+    width: 700px;
+    height: 700px;
+    background: radial-gradient(circle, rgba(59,130,246,0.15), transparent 70%);
+    border-radius: 50%;
   }
-  .field.block select:focus{ border-color:#3b82f6; box-shadow:0 0 0 3px rgba(59,130,246,.15) }
-  .auth-actions.line{display:flex;justify-content:space-between;align-items:center;margin-top:8px}
+  .login-page::after {
+    content: "";
+    position: absolute;
+    bottom: -30%;
+    left: -15%;
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(249,115,22,0.1), transparent 70%);
+    border-radius: 50%;
+  }
+
+  .login-card {
+    width: min(480px, 100%);
+    padding: 2.5rem 2.25rem 2rem;
+    border-radius: 24px;
+    background: rgba(255,255,255,0.97);
+    backdrop-filter: blur(20px);
+    box-shadow: 0 25px 80px rgba(0,0,0,0.25);
+    position: relative;
+    z-index: 1;
+    animation: cardSlideUp 0.5s ease-out;
+  }
+  @keyframes cardSlideUp {
+    from { transform: translateY(30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  /* Brand */
+  .login-brand {
+    text-align: center;
+    margin-bottom: 1.75rem;
+  }
+  .login-logo {
+    width: 64px;
+    height: 64px;
+    background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+    border-radius: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    box-shadow: 0 8px 24px rgba(30,64,175,0.3);
+    margin-bottom: 1rem;
+  }
+  .login-title {
+    font-size: 1.75rem;
+    font-weight: 900;
+    color: #0f172a;
+    margin: 0 0 0.25rem;
+    letter-spacing: -0.02em;
+  }
+  .login-subtitle {
+    color: #64748b;
+    font-size: 0.95rem;
+    font-weight: 500;
+    margin: 0;
+  }
+
+  /* Role Switcher */
+  .role-switcher {
+    display: flex;
+    gap: 0.5rem;
+    background: #f1f5f9;
+    border-radius: 14px;
+    padding: 5px;
+    margin-bottom: 1.5rem;
+  }
+  .role-tab {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    border-radius: 11px;
+    border: none;
+    background: transparent;
+    color: #64748b;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .role-tab:hover {
+    color: #0f172a;
+  }
+  .role-tab.active {
+    background: white;
+    color: #0f172a;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  .role-tab .tab-emoji {
+    font-size: 1.1rem;
+  }
+
+  /* Form Groups */
+  .form-group {
+    margin-bottom: 1.25rem;
+  }
+  .form-label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #374151;
+    margin-bottom: 0.5rem;
+    letter-spacing: 0.01em;
+  }
+  .form-input,
+  .form-select {
+    width: 100%;
+    height: 50px;
+    padding: 0 1rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 14px;
+    background: #f8fafc;
+    font-size: 0.95rem;
+    color: #0f172a;
+    outline: none;
+    transition: all 0.2s;
+  }
+  .form-select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2364748b' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    padding-right: 2.5rem;
+  }
+  .form-input:focus,
+  .form-select:focus {
+    border-color: #3b82f6;
+    background: #fff;
+    box-shadow: 0 0 0 4px rgba(59,130,246,0.1);
+  }
+  .form-input::placeholder {
+    color: #94a3b8;
+  }
+
+  /* Password Wrapper */
+  .password-wrapper {
+    position: relative;
+  }
+  .password-wrapper .form-input {
+    padding-right: 3.25rem;
+  }
+  .toggle-pass {
+    position: absolute;
+    right: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 38px;
+    height: 38px;
+    border: none;
+    border-radius: 10px;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1.1rem;
+    transition: background 0.2s;
+  }
+  .toggle-pass:hover {
+    background: #f1f5f9;
+  }
+
+  /* Actions Row */
+  .actions-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.25rem;
+  }
+  .remember-check {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    user-select: none;
+  }
+  .remember-check input {
+    width: 18px;
+    height: 18px;
+    accent-color: #3b82f6;
+    cursor: pointer;
+  }
+  .remember-check span {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #475569;
+  }
+  .forgot-link {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #3b82f6;
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  .forgot-link:hover {
+    color: #1d4ed8;
+    text-decoration: underline;
+  }
+
+  /* Submit Button */
+  .submit-btn {
+    width: 100%;
+    height: 52px;
+    border: none;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+    color: white;
+    font-size: 1rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 16px rgba(30,64,175,0.3);
+    position: relative;
+    overflow: hidden;
+  }
+  .submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(30,64,175,0.4);
+  }
+  .submit-btn:active {
+    transform: translateY(0);
+  }
+
+  /* Footer */
+  .login-footer {
+    text-align: center;
+    margin-top: 1.25rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid #e2e8f0;
+    color: #64748b;
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+  .login-footer a {
+    color: #3b82f6;
+    font-weight: 700;
+    text-decoration: none;
+  }
+  .login-footer a:hover {
+    text-decoration: underline;
+  }
+
+  /* Hidden form */
+  .form-panel { display: none; }
+  .form-panel.active { display: block; }
+
+  /* Divider */
+  .login-divider {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin: 1.25rem 0;
+    color: #94a3b8;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+  .login-divider::before,
+  .login-divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: #e2e8f0;
+  }
+
+  @media (max-width: 560px) {
+    .login-card { padding: 2rem 1.5rem 1.5rem; }
+    .actions-row { flex-direction: column; align-items: flex-start; gap: 0.75rem; }
+  }
 </style>
 {% endblock %}
 
 {% block content %}
-<section class="auth-wrap auth-aura">
-  <div class="auth-card pro elevate" style="max-width:720px">
-    <!-- Marca -->
-    <div class="auth-brand center">
-      <span class="auth-logo">🚚</span>
-      <div class="auth-brand-text">
-        <h1 class="auth-title">EMEX</h1>
-        <p class="subtitle muted-center">Iniciar sesión</p>
-      </div>
+<section class="login-page">
+  <div class="login-card">
+    <!-- Brand -->
+    <div class="login-brand">
+      <div class="login-logo">🚚</div>
+      <h1 class="login-title">Bienvenido a EMEX</h1>
+      <p class="login-subtitle">Ingresa a tu cuenta para continuar</p>
     </div>
 
-    <div class="role-chooser" role="tablist" aria-label="Selecciona tipo de acceso">
-      <button id="btnEmp" class="role-btn active" data-target="form-emp" role="tab" aria-selected="true">
-        <span class="emoji">👷</span> Empleado
+    <!-- Role Switcher -->
+    <div class="role-switcher" role="tablist">
+      <button class="role-tab active" id="tabEmp" data-panel="panelEmp" role="tab" aria-selected="true">
+        <span class="tab-emoji">👷</span> Empleado
       </button>
-      <button id="btnAdm" class="role-btn" data-target="form-adm" role="tab" aria-selected="false">
-        <span class="emoji">🛡️</span> Administrador
+      <button class="role-tab" id="tabAdm" data-panel="panelAdm" role="tab" aria-selected="false">
+        <span class="tab-emoji">🛡️</span> Administrador
       </button>
     </div>
 
-    <!-- Login Empleado -->
-    <form method="post" id="form-emp" class="auth-form smart-form" autocomplete="off">
+    <!-- Employee Login -->
+    <form method="post" id="panelEmp" class="form-panel active" autocomplete="off">
       <input type="hidden" name="mode" value="employee">
 
-      <div class="field block">
-        <label for="employee_id">Empleado</label>
-        <select id="employee_id" name="employee_id" required>
-          <option value="" disabled selected>Selecciona tu nombre en el catálogo…</option>
+      <div class="form-group">
+        <label class="form-label" for="employee_id">Selecciona tu nombre</label>
+        <select id="employee_id" name="employee_id" class="form-select" required>
+          <option value="" disabled selected>Busca tu nombre en el catálogo…</option>
           {% for e in employees %}
             <option value="{{ e.id }}">{{ e.name }}</option>
           {% endfor %}
         </select>
       </div>
 
-      <div class="field float with-addon">
-        <input type="password" id="emp_password" name="password" placeholder=" " required>
-        <label for="emp_password">Contraseña</label>
-        <button type="button" class="icon-btn" id="togglePassEmp" aria-label="Mostrar u ocultar contraseña">👁</button>
+      <div class="form-group">
+        <label class="form-label" for="emp_password">Contraseña</label>
+        <div class="password-wrapper">
+          <input type="password" id="emp_password" name="password" class="form-input" placeholder="Ingresa tu contraseña" required>
+          <button type="button" class="toggle-pass" id="toggleEmp" aria-label="Mostrar contraseña">👁</button>
+        </div>
       </div>
 
-      <div class="auth-actions line">
-        <label class="remember">
+      <div class="actions-row">
+        <label class="remember-check">
           <input type="checkbox" name="remember" value="1">
           <span>Recordarme</span>
         </label>
-        <a class="forgot" href="{{ url_for('auth.forgot_password') }}">¿Olvidaste tu contraseña?</a>
+        <a class="forgot-link" href="{{ url_for('auth.forgot_password') }}">¿Olvidaste tu contraseña?</a>
       </div>
 
-      <button class="btn auth-submit auth-primary" type="submit">
-        <span class="btn-label">Entrar</span>
-        <span class="btn-spinner" aria-hidden="true"></span>
-      </button>
+      <button class="submit-btn" type="submit">Iniciar Sesión</button>
     </form>
 
-    <!-- Login Admin -->
-    <form method="post" id="form-adm" class="auth-form smart-form form-hidden" autocomplete="off">
+    <!-- Admin Login -->
+    <form method="post" id="panelAdm" class="form-panel" autocomplete="off">
       <input type="hidden" name="mode" value="admin">
 
-      <div class="field float">
-        <input type="email" id="email" name="email" placeholder=" ">
-        <label for="email">Correo</label>
+      <div class="form-group">
+        <label class="form-label" for="email">Correo electrónico</label>
+        <input type="email" id="email" name="email" class="form-input" placeholder="admin@emex.com">
       </div>
 
-      <div class="field float with-addon">
-        <input type="password" id="adm_password" name="password" placeholder=" ">
-        <label for="adm_password">Contraseña</label>
-        <button type="button" class="icon-btn" id="togglePassAdm" aria-label="Mostrar u ocultar contraseña">👁</button>
+      <div class="form-group">
+        <label class="form-label" for="adm_password">Contraseña</label>
+        <div class="password-wrapper">
+          <input type="password" id="adm_password" name="password" class="form-input" placeholder="Ingresa tu contraseña">
+          <button type="button" class="toggle-pass" id="toggleAdm" aria-label="Mostrar contraseña">👁</button>
+        </div>
       </div>
 
-      <div class="auth-actions line">
-        <label class="remember">
+      <div class="actions-row">
+        <label class="remember-check">
           <input type="checkbox" name="remember" value="1">
           <span>Recordarme</span>
         </label>
-        <a class="forgot" href="{{ url_for('auth.forgot_password') }}">¿Olvidaste tu contraseña?</a>
+        <a class="forgot-link" href="{{ url_for('auth.forgot_password') }}">¿Olvidaste tu contraseña?</a>
       </div>
 
-      <button class="btn auth-submit auth-primary" type="submit">
-        <span class="btn-label">Entrar</span>
-        <span class="btn-spinner" aria-hidden="true"></span>
-      </button>
+      <button class="submit-btn" type="submit">Iniciar Sesión</button>
     </form>
 
-    <p class="muted-center" style="margin-top:14px">
+    <!-- Footer -->
+    <div class="login-footer">
       ¿No tienes cuenta? <a href="{{ url_for('auth.register') }}">Crear cuenta</a>
-    </p>
+    </div>
   </div>
 </section>
 {% endblock %}
 
 {% block scripts %}
 <script>
-  // Toggle de formularios
-  const btnEmp = document.getElementById('btnEmp');
-  const btnAdm = document.getElementById('btnAdm');
-  const fEmp   = document.getElementById('form-emp');
-  const fAdm   = document.getElementById('form-adm');
+  // Tab switching
+  const tabs = document.querySelectorAll('.role-tab');
+  const panels = document.querySelectorAll('.form-panel');
 
-  function setFormVisible(which){
-    const empOn = (which === 'emp');
-    fEmp.classList.toggle('form-hidden', !empOn);
-    fAdm.classList.toggle('form-hidden',  empOn);
-    btnEmp.classList.toggle('active', empOn);
-    btnAdm.classList.toggle('active', !empOn);
-    Array.from(fEmp.elements).forEach(el => { if(el.name) el.disabled = !empOn; });
-    Array.from(fAdm.elements).forEach(el => { if(el.name) el.disabled = empOn; });
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      const targetId = tab.dataset.panel;
+
+      tabs.forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected', 'false'); });
+      tab.classList.add('active');
+      tab.setAttribute('aria-selected', 'true');
+
+      panels.forEach(p => {
+        const isTarget = p.id === targetId;
+        p.classList.toggle('active', isTarget);
+        // Disable hidden form fields so they don't submit
+        Array.from(p.elements).forEach(el => { if (el.name) el.disabled = !isTarget; });
+      });
+    });
+  });
+
+  // Initialize: disable admin form fields
+  const admPanel = document.getElementById('panelAdm');
+  if (admPanel) {
+    Array.from(admPanel.elements).forEach(el => { if (el.name) el.disabled = true; });
   }
-  btnEmp.addEventListener('click', ()=> setFormVisible('emp'));
-  btnAdm.addEventListener('click', ()=> setFormVisible('adm'));
-  setFormVisible('emp'); // por defecto Empleado
 
-  // Mostrar/ocultar contraseña (ambos formularios)
-  function attachToggle(btnId, inputId){
+  // Toggle password visibility
+  function setupToggle(btnId, inputId) {
     const btn = document.getElementById(btnId);
     const inp = document.getElementById(inputId);
-    if(!btn || !inp) return;
-    btn.addEventListener('click', ()=>{
-      const show = inp.getAttribute('type') === 'password';
-      inp.setAttribute('type', show ? 'text' : 'password');
-      btn.textContent = show ? '🙈' : '👁';
+    if (!btn || !inp) return;
+    btn.addEventListener('click', () => {
+      const isPass = inp.type === 'password';
+      inp.type = isPass ? 'text' : 'password';
+      btn.textContent = isPass ? '🙈' : '👁';
       inp.focus();
     });
   }
-  attachToggle('togglePassEmp','emp_password');
-  attachToggle('togglePassAdm','adm_password');
+  setupToggle('toggleEmp', 'emp_password');
+  setupToggle('toggleAdm', 'adm_password');
 </script>
 {% endblock %}
