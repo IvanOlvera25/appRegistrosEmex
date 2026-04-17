@@ -16,7 +16,9 @@ from emex.api.routes import api_bp
 
 
 def create_app():
-    load_dotenv()
+    # Cargar .env desde la raíz del proyecto (un nivel arriba de emex/)
+    basedir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    load_dotenv(os.path.join(basedir, '.env'))
 
     app = Flask(__name__, static_folder="static", template_folder="templates")
 
