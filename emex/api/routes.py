@@ -244,7 +244,7 @@ def evolution_webhook():
             reply_text = "❌ Hubo un error al intentar guardar tu registro en la base de datos."
 
 
-    # Enviar respuesta al usuario
-    send_whatsapp_message(reply_jid, reply_text)
+    # Enviar respuesta al usuario (Evolution API v1 necesita solo el número, sin @s.whatsapp.net)
+    send_whatsapp_message(phone_number, reply_text)
 
     return jsonify({"status": "success"}), 200
