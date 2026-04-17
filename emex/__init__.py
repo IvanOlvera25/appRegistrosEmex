@@ -6,6 +6,10 @@ from dotenv import load_dotenv
 from sqlalchemy import text
 from flask_compress import Compress
 
+# ── Cargar .env ANTES de cualquier import que use os.getenv() ──
+_basedir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+load_dotenv(os.path.join(_basedir, '.env'))
+
 # Extensiones y blueprints (importes ABSOLUTOS)
 from emex.extensions import db, login_manager, migrate
 from emex.models import User
@@ -16,15 +20,13 @@ from emex.api.routes import api_bp
 
 
 def create_app():
-    # Cargar .env desde la raíz del proyecto (un nivel arriba de emex/)
-    basedir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    load_dotenv(os.path.join(basedir, '.env'))
-
     app = Flask(__name__, static_folder="static", template_folder="templates")
 
     # ---------- Configuración base ----------
     app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "change-me")
-    app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL", "sqlite:///emex.db")
+    # Soportar ambos nombres de variable comunes
+    db_url = os.getenv("DATABASE_URL") or os.getenv("SQLALCHEMY_DATABASE_URI", "sqlite:///emex.db")
+    app.config["SQLALCHEMY_DATABASE_URI"] = db_url
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     app.config["JSON_AS_ASCII"] = False
     app.config["JSON_SORT_KEYS"] = False
