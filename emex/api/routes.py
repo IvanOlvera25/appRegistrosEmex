@@ -32,6 +32,8 @@ def evolution_webhook():
     if from_me:
         return jsonify({"status": "ignored", "reason": "sent by me"}), 200
 
+    # Guardar el remoteJid completo para enviar respuestas (soporta @lid y @s.whatsapp.net)
+    reply_jid = remote_jid
     phone_number = remote_jid.split("@")[0]
     
     # El objeto de mensaje en sí (qué contiene el texto, audio, etc)
@@ -238,6 +240,6 @@ def evolution_webhook():
 
 
     # Enviar respuesta al usuario
-    send_whatsapp_message(phone_number, reply_text)
+    send_whatsapp_message(reply_jid, reply_text)
 
     return jsonify({"status": "success"}), 200
