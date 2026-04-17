@@ -15,26 +15,34 @@ def evolution_webhook():
     data = request.json
     
     event_type = data.get("event")
-    if event_type != "messages.upsert":
-        return jsonify({"status": "ignored", "reason": "not a message event"}), 200
+    # Aceptar variaciones comunes en el nombre del evento
+    if event_type not in ["messages.upsert", "MESSAGES_UPSERT"]:
+        return jsonify({"status": "ignored", "reason": f"not a message event ({event_type})"}), 200
         
-    messages = data.get("data", {}).get("message", {}) if "data" in data else data
+    # En la versión 2.x, el payload viene dentro de "data"
+    inner_data = data.get("data", {}) if "data" in data else data
     
-    if not isinstance(messages, dict):
-        return jsonify({"status": "ignored"}), 200
-        
-    remote_jid = messages.get("key", {}).get("remoteJid", "")
+    # Extraer identificadores que están al nivel de "data"
+    remote_jid = inner_data.get("key", {}).get("remoteJid", "")
+    from_me = inner_data.get("key", {}).get("fromMe", False)
+    
     if "@g.us" in remote_jid:
         return jsonify({"status": "ignored", "reason": "group message"}), 200
         
-    from_me = messages.get("key", {}).get("fromMe", False)
     if from_me:
         return jsonify({"status": "ignored", "reason": "sent by me"}), 200
 
     phone_number = remote_jid.split("@")[0]
     
-    msg_obj = messages.get("message", {})
-    text_content = msg_obj.get("conversation") or msg_obj.get("extendedTextMessage", {}).get("text") or ""
+    # El objeto de mensaje en sí (qué contiene el texto, audio, etc)
+    msg_obj = inner_data.get("message", {})
+    
+    # Manejar los distintos tipos de mensajes de texto en WhatsApp
+    text_content = (
+        msg_obj.get("conversation") or 
+        msg_obj.get("extendedTextMessage", {}).get("text") or 
+        ""
+    )
     
     if not text_content:
         return jsonify({"status": "ignored", "reason": "empty text"}), 200
