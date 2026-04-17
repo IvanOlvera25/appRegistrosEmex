@@ -1,0 +1,468 @@
+{% extends "base.html" %}
+{% block title %}EMEX — Dispersiones de Diesel{% endblock %}
+{% block content %}
+<style>
+  :root {
+    --primary: #1e40af;
+    --primary-light: #3b82f6;
+    --success: #059669;
+    --warning: #f59e0b;
+    --danger: #dc2626;
+    --info: #0891b2;
+    --dark: #0f172a;
+    --gray: #64748b;
+    --gray-light: #f8fafc;
+    --border: #e2e8f0;
+    --emerald: #10b981;
+    --emerald-dark: #059669;
+  }
+
+  .disp-header {
+    background: linear-gradient(135deg, #059669 0%, #10b981 50%, #34d399 100%);
+    border-radius: 20px;
+    padding: 2.5rem 3rem;
+    margin-bottom: 2rem;
+    color: white;
+    box-shadow: 0 10px 40px rgba(5, 150, 105, 0.25);
+    position: relative;
+    overflow: hidden;
+  }
+  .disp-header::before {
+    content: "";
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(255,255,255,0.12), transparent 70%);
+    border-radius: 50%;
+  }
+  .disp-header-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 2rem;
+    flex-wrap: wrap;
+  }
+  .disp-header h1 {
+    font-size: 2.25rem;
+    font-weight: 900;
+    margin: 0 0 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .disp-header p {
+    font-size: 1.05rem;
+    opacity: 0.93;
+    margin: 0;
+    font-weight: 500;
+  }
+  .btn-back {
+    background: rgba(255,255,255,0.2);
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(255,255,255,0.3);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+  }
+  .btn-back:hover {
+    background: white;
+    color: var(--emerald-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+  }
+
+  .kpis-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+  .kpi-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 1.75rem 2rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+  .kpi-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(0,0,0,0.12);
+  }
+  .kpi-card::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0;
+    width: 5px; height: 100%;
+  }
+  .kpi-card.emerald::before { background: linear-gradient(180deg, #34d399, #059669); }
+  .kpi-card.blue::before { background: linear-gradient(180deg, #60a5fa, #2563eb); }
+  .kpi-card.amber::before { background: linear-gradient(180deg, #fbbf24, #d97706); }
+  .kpi-card.purple::before { background: linear-gradient(180deg, #a78bfa, #7c3aed); }
+
+  .kpi-icon {
+    width: 52px; height: 52px;
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.6rem;
+    margin-bottom: 0.75rem;
+  }
+  .kpi-card.emerald .kpi-icon { background: linear-gradient(135deg, #34d399, #059669); box-shadow: 0 6px 16px rgba(5,150,105,0.25); }
+  .kpi-card.blue .kpi-icon { background: linear-gradient(135deg, #60a5fa, #2563eb); box-shadow: 0 6px 16px rgba(37,99,235,0.25); }
+  .kpi-card.amber .kpi-icon { background: linear-gradient(135deg, #fbbf24, #d97706); box-shadow: 0 6px 16px rgba(217,119,6,0.25); }
+  .kpi-card.purple .kpi-icon { background: linear-gradient(135deg, #a78bfa, #7c3aed); box-shadow: 0 6px 16px rgba(124,58,237,0.25); }
+
+  .kpi-label {
+    font-size: 0.82rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--gray);
+    margin-bottom: 0.4rem;
+  }
+  .kpi-value {
+    font-size: 2rem;
+    font-weight: 900;
+    color: var(--dark);
+    line-height: 1.1;
+  }
+
+  .charts-row {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+  .chart-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 1.75rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  }
+  .chart-card h3 {
+    font-weight: 900;
+    color: var(--dark);
+    margin: 0 0 1rem;
+    font-size: 1.1rem;
+  }
+
+  .rank-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .rank-table thead th {
+    text-align: left;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    color: var(--gray);
+    border-bottom: 2px solid var(--border);
+  }
+  .rank-table thead th:last-child { text-align: right; }
+  .rank-table tbody td {
+    padding: 0.65rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+    font-weight: 700;
+  }
+  .rank-table tbody td:first-child {
+    font-weight: 900;
+    color: var(--emerald-dark);
+    width: 30px;
+  }
+  .rank-table tbody td:last-child { text-align: right; }
+  .liters-badge {
+    background: #ecfdf5;
+    color: #065f46;
+    padding: 0.2rem 0.65rem;
+    border-radius: 999px;
+    font-weight: 800;
+    font-size: 0.85rem;
+    border: 1px solid #6ee7b7;
+  }
+
+  .disp-table-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  }
+  .disp-table-header {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 2px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .disp-table-header h3 {
+    font-weight: 900;
+    font-size: 1.15rem;
+    color: var(--dark);
+    margin: 0;
+  }
+  .disp-table-wrapper {
+    overflow-x: auto;
+    max-height: 500px;
+  }
+  .disp-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+  .disp-table thead th {
+    position: sticky;
+    top: 0;
+    background: #f8fafc;
+    padding: 0.85rem 1rem;
+    text-align: left;
+    font-weight: 800;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--gray);
+    border-bottom: 2px solid var(--border);
+    z-index: 10;
+  }
+  .disp-table tbody td {
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  .disp-table tbody tr:hover {
+    background: #f0fdf4;
+  }
+  .unit-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.25rem 0.65rem;
+    background: #dbeafe;
+    color: #1e40af;
+    border-radius: 8px;
+    font-weight: 800;
+    font-size: 0.85rem;
+  }
+  .gestor-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.25rem 0.65rem;
+    background: #f3e8ff;
+    color: #6b21a8;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 0.85rem;
+  }
+  .empty-state {
+    padding: 4rem 2rem;
+    text-align: center;
+  }
+  .empty-icon { font-size: 4rem; opacity: 0.4; margin-bottom: 1rem; }
+  .empty-title { font-size: 1.5rem; font-weight: 900; color: var(--dark); margin-bottom: 0.5rem; }
+  .empty-text { color: var(--gray); font-size: 1rem; }
+
+  @media (max-width: 968px) {
+    .disp-header { padding: 2rem 1.5rem; }
+    .disp-header h1 { font-size: 1.75rem; }
+    .kpis-grid { grid-template-columns: 1fr 1fr; }
+    .charts-row { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 600px) {
+    .kpis-grid { grid-template-columns: 1fr; }
+  }
+</style>
+
+<div>
+  <!-- Header -->
+  <div class="disp-header">
+    <div class="disp-header-content">
+      <div>
+        <h1>⛽ Dispersión de Diesel</h1>
+        <p>Control de dispersiones del Gestor de Compras</p>
+      </div>
+      <a href="{{ url_for('admin.dashboard') }}" class="btn-back">
+        <span>←</span> Dashboard
+      </a>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpis-grid">
+    <div class="kpi-card emerald">
+      <div class="kpi-icon">🔢</div>
+      <div class="kpi-label">Dispersiones Totales</div>
+      <div class="kpi-value">{{ total_dispersions }}</div>
+    </div>
+    <div class="kpi-card blue">
+      <div class="kpi-icon">⛽</div>
+      <div class="kpi-label">Litros Dispersados</div>
+      <div class="kpi-value">{{ "{:,.1f}".format(total_liters) }} L</div>
+    </div>
+    <div class="kpi-card amber">
+      <div class="kpi-icon">🏗️</div>
+      <div class="kpi-label">Unidades Servidas</div>
+      <div class="kpi-value">{{ units_served }}</div>
+    </div>
+    <div class="kpi-card purple">
+      <div class="kpi-icon">📊</div>
+      <div class="kpi-label">Prom. L/Dispersión</div>
+      <div class="kpi-value">{{ avg_per_disp }} L</div>
+    </div>
+  </div>
+
+  <!-- Gráfica + Top Unidades -->
+  <div class="charts-row">
+    <div class="chart-card">
+      <h3>📈 Litros Dispersados por Día (14 días)</h3>
+      <canvas id="dispChart" height="200"></canvas>
+    </div>
+    <div class="chart-card">
+      <h3>🏆 Top 5 Unidades por Litros</h3>
+      <table class="rank-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Unidad</th>
+            <th>Litros</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for unit_code, liters in top_units %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td>
+              <span class="unit-chip">🔧 {{ unit_code }}</span>
+            </td>
+            <td>
+              <span class="liters-badge">{{ "{:,.1f}".format(liters) }} L</span>
+            </td>
+          </tr>
+          {% endfor %}
+          {% if not top_units %}
+          <tr><td colspan="3" style="padding: 1rem; text-align: center; color: var(--gray);">Sin datos</td></tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Tabla detallada -->
+  <div class="disp-table-card">
+    <div class="disp-table-header">
+      <h3>📋 Registro Detallado de Dispersiones</h3>
+      <span style="color: var(--gray); font-weight: 700; font-size: 0.9rem;">{{ total_dispersions }} registros</span>
+    </div>
+
+    {% if disp_logs|length == 0 %}
+    <div class="empty-state">
+      <div class="empty-icon">⛽</div>
+      <h3 class="empty-title">Sin dispersiones registradas</h3>
+      <p class="empty-text">Las dispersiones aparecerán aquí cuando el Gestor de Compras registre desde WhatsApp</p>
+    </div>
+    {% else %}
+    <div class="disp-table-wrapper">
+      <table class="disp-table">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Gestor</th>
+            <th>Unidad</th>
+            <th>Litros</th>
+            <th>Fuente</th>
+            <th>Notas</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for d in disp_logs %}
+          <tr>
+            <td style="white-space: nowrap; font-weight: 600;">{{ d.created_at.strftime("%Y-%m-%d %H:%M") }}</td>
+            <td>
+              <span class="gestor-chip">👤 {{ d.worker_name }}</span>
+            </td>
+            <td>
+              {% if d.main_unit %}
+              <span class="unit-chip">{{ d.main_unit.code }}</span>
+              {% else %}
+              <span style="color: var(--gray);">—</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if d.fuel_liters %}
+              <span class="liters-badge">⛽ {{ "{:,.1f}".format(d.fuel_liters) }} L</span>
+              {% else %}
+              <span style="color: var(--gray);">—</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if d.fuel_source_purchase %}
+              <span style="color: var(--primary); font-weight: 700;">Compra #{{ d.fuel_source_purchase.id }}</span>
+              {% else %}
+              <span style="color: var(--gray);">WhatsApp</span>
+              {% endif %}
+            </td>
+            <td style="max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
+                title="{{ d.notes or '' }}">
+              {{ (d.notes or '—')[:60] }}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+  if (typeof Chart !== 'undefined') {
+    const ctx = document.getElementById('dispChart');
+    if (ctx) {
+      new Chart(ctx.getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels: {{ disp_labels | tojson }},
+          datasets: [{
+            label: 'Litros',
+            data: {{ disp_series | tojson }},
+            backgroundColor: 'rgba(16, 185, 129, 0.7)',
+            borderColor: '#059669',
+            borderWidth: 2,
+            borderRadius: 6,
+            hoverBackgroundColor: '#059669'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(ctx) { return ctx.parsed.y + ' litros'; }
+              }
+            }
+          },
+          scales: {
+            x: { grid: { display: false } },
+            y: { beginAtZero: true, ticks: { callback: function(v) { return v + ' L'; } } }
+          }
+        }
+      });
+    }
+  }
+</script>
+{% endblock %}

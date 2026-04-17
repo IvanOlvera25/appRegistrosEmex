@@ -909,57 +909,147 @@
     </div>
   </div>
 
-  <!-- KPIs -->
-  <div class="kpis-grid">
+  <!-- KPIs Fila 1 -->
+  <div class="kpis-grid" style="grid-template-columns: repeat(4, 1fr);">
     <div class="kpi-card primary">
-      <div class="kpi-header">
-        <div class="kpi-icon">📋</div>
-      </div>
+      <div class="kpi-header"><div class="kpi-icon">📋</div></div>
       <div class="kpi-label">Registros Totales</div>
-      <div class="kpi-value">{{ stats.total if stats else last_ops|length }}</div>
+      <div class="kpi-value">{{ stats.total }}</div>
     </div>
-
-    <div class="kpi-card warning">
-      <div class="kpi-header">
-        <div class="kpi-icon">🔧</div>
-      </div>
-      <div class="kpi-label">Servicios e Incidencias</div>
-      <div class="kpi-value">{{ stats.si_count if stats else '0' }}</div>
-    </div>
-
-    <div class="kpi-card success">
-      <div class="kpi-header">
-        <div class="kpi-icon">⛽</div>
-      </div>
-      <div class="kpi-label">Combustible (L)</div>
-      <div class="kpi-value">{{ "{:,.1f}".format(stats.fuel_liters) if stats and stats.fuel_liters is not none else
-        '0.0' }}</div>
-    </div>
-
-    <div class="kpi-card purple">
-      <div class="kpi-header">
-        <div class="kpi-icon">🛒</div>
-      </div>
-      <div class="kpi-label">Compras Registradas</div>
-      <div class="kpi-value">{{ stats.purchases_count if stats and stats.purchases_count is defined else '0' }}</div>
-    </div>
-
-    <div class="kpi-card orange">
-      <div class="kpi-header">
-        <div class="kpi-icon">💰</div>
-      </div>
-      <div class="kpi-label">Costo Total Compras</div>
-      <div class="kpi-value">${{ "{:,.0f}".format(stats.purchases_total) if stats and stats.purchases_total is defined
-        else '0' }}</div>
-    </div>
-
     <div class="kpi-card info">
-      <div class="kpi-header">
-        <div class="kpi-icon">⏰</div>
-      </div>
+      <div class="kpi-header"><div class="kpi-icon">🚚</div></div>
+      <div class="kpi-label">Total Viajes</div>
+      <div class="kpi-value">{{ stats.trips_count }}</div>
+    </div>
+    <div class="kpi-card success">
+      <div class="kpi-header"><div class="kpi-icon">👷</div></div>
+      <div class="kpi-label">Operadores Activos</div>
+      <div class="kpi-value">{{ stats.operators_active }}</div>
+    </div>
+    <div class="kpi-card orange">
+      <div class="kpi-header"><div class="kpi-icon">🚛</div></div>
+      <div class="kpi-label">Choferes Activos</div>
+      <div class="kpi-value">{{ stats.drivers_active }}</div>
+    </div>
+  </div>
+
+  <!-- KPIs Fila 2 -->
+  <div class="kpis-grid" style="grid-template-columns: repeat(4, 1fr);">
+    <div class="kpi-card success">
+      <div class="kpi-header"><div class="kpi-icon">⛽</div></div>
+      <div class="kpi-label">Combustible Total</div>
+      <div class="kpi-value">{{ "{:,.1f}".format(stats.fuel_liters) }} L</div>
+    </div>
+    <div class="kpi-card purple">
+      <div class="kpi-header"><div class="kpi-icon">📊</div></div>
+      <div class="kpi-label">Prom. Diesel/Viaje</div>
+      <div class="kpi-value">{{ stats.avg_diesel }} L</div>
+    </div>
+    <div class="kpi-card warning">
+      <div class="kpi-header"><div class="kpi-icon">🔧</div></div>
+      <div class="kpi-label">Servicios/Incidencias</div>
+      <div class="kpi-value">{{ stats.si_count }}</div>
+    </div>
+    <div class="kpi-card info">
+      <div class="kpi-header"><div class="kpi-icon">⏰</div></div>
       <div class="kpi-label">Horas Extra</div>
-      <div class="kpi-value">{{ "{:.1f}".format(stats.overtime_hours) if stats and stats.overtime_hours is not none else
-        '0.0' }}</div>
+      <div class="kpi-value">{{ "{:.1f}".format(stats.overtime_hours) }}</div>
+    </div>
+  </div>
+
+  <!-- Gráficas y Rankings -->
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+    <!-- Gráfica de barras: registros por día -->
+    <div style="background: white; border: 1px solid var(--border); border-radius: 18px; padding: 1.75rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+      <h3 style="font-weight: 900; color: var(--dark); margin: 0 0 1rem; font-size: 1.1rem;">📈 Registros Diarios (14 días)</h3>
+      <canvas id="dailyChart" height="220"></canvas>
+    </div>
+    <!-- Gráfica dona: distribución por rol -->
+    <div style="background: white; border: 1px solid var(--border); border-radius: 18px; padding: 1.75rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+      <h3 style="font-weight: 900; color: var(--dark); margin: 0 0 1rem; font-size: 1.1rem;">🎯 Distribución por Rol</h3>
+      <div style="display: flex; align-items: center; gap: 2rem;">
+        <div style="width: 200px; height: 200px;">
+          <canvas id="roleChart"></canvas>
+        </div>
+        <div style="flex: 1;">
+          <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <span style="width: 14px; height: 14px; border-radius: 4px; background: #3b82f6; display: inline-block;"></span>
+              <span style="font-weight: 700; color: var(--dark);">Operadores</span>
+              <span style="margin-left: auto; font-weight: 900; color: var(--dark);">{{ charts.role_ops }}</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <span style="width: 14px; height: 14px; border-radius: 4px; background: #f59e0b; display: inline-block;"></span>
+              <span style="font-weight: 700; color: var(--dark);">Choferes</span>
+              <span style="margin-left: auto; font-weight: 900; color: var(--dark);">{{ charts.role_drv }}</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <span style="width: 14px; height: 14px; border-radius: 4px; background: #8b5cf6; display: inline-block;"></span>
+              <span style="font-weight: 700; color: var(--dark);">Gestores</span>
+              <span style="margin-left: auto; font-weight: 900; color: var(--dark);">{{ charts.role_ges }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rankings -->
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+    <!-- Top 5 Trabajadores -->
+    <div style="background: white; border: 1px solid var(--border); border-radius: 18px; padding: 1.75rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+      <h3 style="font-weight: 900; color: var(--dark); margin: 0 0 1rem; font-size: 1.1rem;">🏆 Top 5 Trabajadores</h3>
+      <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+          <tr style="border-bottom: 2px solid var(--border);">
+            <th style="text-align: left; padding: 0.5rem; font-size: 0.8rem; text-transform: uppercase; color: var(--gray);">#</th>
+            <th style="text-align: left; padding: 0.5rem; font-size: 0.8rem; text-transform: uppercase; color: var(--gray);">Nombre</th>
+            <th style="text-align: right; padding: 0.5rem; font-size: 0.8rem; text-transform: uppercase; color: var(--gray);">Registros</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for w in charts.top_workers %}
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 0.65rem 0.5rem; font-weight: 900; color: var(--primary);">{{ loop.index }}</td>
+            <td style="padding: 0.65rem 0.5rem; font-weight: 700;">{{ w.name }}</td>
+            <td style="padding: 0.65rem 0.5rem; text-align: right;">
+              <span style="background: #dbeafe; color: #1e40af; padding: 0.2rem 0.6rem; border-radius: 999px; font-weight: 800; font-size: 0.85rem;">{{ w.count }}</span>
+            </td>
+          </tr>
+          {% endfor %}
+          {% if not charts.top_workers %}
+          <tr><td colspan="3" style="padding: 1rem; text-align: center; color: var(--gray);">Sin datos</td></tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Top 5 Rutas -->
+    <div style="background: white; border: 1px solid var(--border); border-radius: 18px; padding: 1.75rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+      <h3 style="font-weight: 900; color: var(--dark); margin: 0 0 1rem; font-size: 1.1rem;">🗺️ Top 5 Rutas</h3>
+      <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+          <tr style="border-bottom: 2px solid var(--border);">
+            <th style="text-align: left; padding: 0.5rem; font-size: 0.8rem; text-transform: uppercase; color: var(--gray);">#</th>
+            <th style="text-align: left; padding: 0.5rem; font-size: 0.8rem; text-transform: uppercase; color: var(--gray);">Ruta</th>
+            <th style="text-align: right; padding: 0.5rem; font-size: 0.8rem; text-transform: uppercase; color: var(--gray);">Viajes</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in charts.top_routes %}
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 0.65rem 0.5rem; font-weight: 900; color: #f59e0b;">{{ loop.index }}</td>
+            <td style="padding: 0.65rem 0.5rem; font-weight: 700;">{{ r.route }}</td>
+            <td style="padding: 0.65rem 0.5rem; text-align: right;">
+              <span style="background: #fef3c7; color: #92400e; padding: 0.2rem 0.6rem; border-radius: 999px; font-weight: 800; font-size: 0.85rem;">{{ r.count }}</span>
+            </td>
+          </tr>
+          {% endfor %}
+          {% if not charts.top_routes %}
+          <tr><td colspan="3" style="padding: 1rem; text-align: center; color: var(--gray);">Sin viajes registrados</td></tr>
+          {% endif %}
+        </tbody>
+      </table>
     </div>
   </div>
 
@@ -1373,6 +1463,57 @@
 
   // Aplicar filtros al cargar la página
   applyFilters();
+
+  // ====== Chart.js ======
+  if (typeof Chart !== 'undefined') {
+    // Daily chart
+    const dailyCtx = document.getElementById('dailyChart');
+    if (dailyCtx) {
+      new Chart(dailyCtx.getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels: {{ charts.daily_labels | tojson }},
+          datasets: [
+            { label: 'Operadores', data: {{ charts.daily_operators | tojson }}, backgroundColor: '#3b82f6', borderRadius: 4 },
+            { label: 'Choferes', data: {{ charts.daily_drivers | tojson }}, backgroundColor: '#f59e0b', borderRadius: 4 },
+            { label: 'Gestores', data: {{ charts.daily_gestores | tojson }}, backgroundColor: '#8b5cf6', borderRadius: 4 },
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'top', labels: { font: { weight: 'bold' } } } },
+          scales: {
+            x: { stacked: true, grid: { display: false } },
+            y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1 } }
+          }
+        }
+      });
+    }
+
+    // Role chart
+    const roleCtx = document.getElementById('roleChart');
+    if (roleCtx) {
+      new Chart(roleCtx.getContext('2d'), {
+        type: 'doughnut',
+        data: {
+          labels: ['Operadores', 'Choferes', 'Gestores'],
+          datasets: [{
+            data: [{{ charts.role_ops }}, {{ charts.role_drv }}, {{ charts.role_ges }}],
+            backgroundColor: ['#3b82f6', '#f59e0b', '#8b5cf6'],
+            borderWidth: 0,
+            hoverOffset: 8
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '65%',
+          plugins: { legend: { display: false } }
+        }
+      });
+    }
+  }
 </script>
 
 {% endblock %}

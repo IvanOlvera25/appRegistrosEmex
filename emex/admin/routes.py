@@ -29,7 +29,7 @@ def _ensure_admin():
         abort(403)
 
 def _kpis():
-    """Calcula métricas simples para los KPIs del dashboard."""
+    """Calcula métricas completas para los KPIs del dashboard."""
     total = db.session.query(func.count(OperatorLog.id)).scalar() or 0
     si_count = (
         db.session.query(func.count(OperatorLog.id))
@@ -37,27 +37,176 @@ def _kpis():
         .scalar()
         or 0
     )
-    fuel_liters = (
+    fuel_liters = float(
         db.session.query(func.coalesce(func.sum(OperatorLog.fuel_liters), 0)).scalar()
-    ) or 0
-    overtime_hours = (
+        or 0
+    )
+    overtime_hours = float(
         db.session.query(func.coalesce(func.sum(OperatorLog.overtime_hours), 0)).scalar()
-    ) or 0
-    time_total = (
+        or 0
+    )
+    time_total = float(
         db.session.query(func.coalesce(func.sum(OperatorLog.time_total), 0)).scalar()
-    ) or 0
-    time_productive = (
+        or 0
+    )
+    time_productive = float(
         db.session.query(func.coalesce(func.sum(OperatorLog.time_productive), 0)).scalar()
-    ) or 0
+        or 0
+    )
+
+    # --- Nuevas métricas ---
+    # Viajes (registros con ruta)
+    trips_count = int(
+        db.session.query(func.count(OperatorLog.id))
+        .filter(or_(
+            OperatorLog.route_id.isnot(None),
+            OperatorLog.route_other_origin.isnot(None),
+            OperatorLog.route_other_destination.isnot(None),
+        ))
+        .scalar() or 0
+    )
+
+    # Operadores activos (nombres únicos sin ruta — no chofer ni gestor)
+    operators_active = int(
+        db.session.query(func.count(func.distinct(OperatorLog.worker_name)))
+        .filter(
+            OperatorLog.route_id.is_(None),
+            OperatorLog.route_other_origin.is_(None),
+            or_(OperatorLog.si_subtype.is_(None), OperatorLog.si_subtype != "compras"),
+        )
+        .scalar() or 0
+    )
+
+    # Choferes activos (nombres únicos con ruta)
+    drivers_active = int(
+        db.session.query(func.count(func.distinct(OperatorLog.worker_name)))
+        .filter(or_(
+            OperatorLog.route_id.isnot(None),
+            OperatorLog.route_other_origin.isnot(None),
+        ))
+        .scalar() or 0
+    )
+
+    # Compras / dispersiones
+    purchases_count = int(
+        db.session.query(func.count(OperatorLog.id))
+        .filter(OperatorLog.si_subtype == "compras")
+        .scalar() or 0
+    )
+    purchases_total = float(
+        db.session.query(func.coalesce(func.sum(OperatorLog.si_amount), 0))
+        .filter(OperatorLog.si_subtype == "compras")
+        .scalar() or 0
+    )
+
+    # Promedio diesel por viaje
+    avg_diesel = round(fuel_liters / trips_count, 1) if trips_count > 0 else 0.0
 
     return SimpleNamespace(
         total=total,
         si_count=si_count,
-        fuel_liters=float(fuel_liters),
-        overtime_hours=float(overtime_hours),
-        time_total=float(time_total),
-        time_productive=float(time_productive),
+        fuel_liters=fuel_liters,
+        overtime_hours=overtime_hours,
+        time_total=time_total,
+        time_productive=time_productive,
+        trips_count=trips_count,
+        operators_active=operators_active,
+        drivers_active=drivers_active,
+        purchases_count=purchases_count,
+        purchases_total=purchases_total,
+        avg_diesel=avg_diesel,
     )
+
+
+def _dashboard_charts():
+    """Datos para gráficas y rankings del dashboard."""
+    today = date.today()
+
+    # --- Registros por día (últimos 14 días) ---
+    daily_labels = []
+    daily_operators = []
+    daily_drivers = []
+    daily_gestores = []
+    for i in range(14):
+        d = today - timedelta(days=13 - i)
+        daily_labels.append(d.strftime("%d/%m"))
+        day_logs = (
+            db.session.query(OperatorLog)
+            .filter(func.date(OperatorLog.created_at) == d)
+            .all()
+        )
+        ops = drv = ges = 0
+        for log in day_logs:
+            if log.si_subtype == "compras":
+                ges += 1
+            elif log.route_id or log.route_other_origin or log.route_other_destination:
+                drv += 1
+            else:
+                ops += 1
+        daily_operators.append(ops)
+        daily_drivers.append(drv)
+        daily_gestores.append(ges)
+
+    # --- Distribución por rol (total) ---
+    all_logs = db.session.query(OperatorLog).all()
+    role_ops = role_drv = role_ges = 0
+    for log in all_logs:
+        if log.si_subtype == "compras":
+            role_ges += 1
+        elif log.route_id or log.route_other_origin or log.route_other_destination:
+            role_drv += 1
+        else:
+            role_ops += 1
+
+    # --- Top 5 trabajadores ---
+    top_workers_q = (
+        db.session.query(
+            OperatorLog.worker_name,
+            func.count(OperatorLog.id).label("cnt"),
+        )
+        .filter(OperatorLog.worker_name.isnot(None))
+        .group_by(OperatorLog.worker_name)
+        .order_by(func.count(OperatorLog.id).desc())
+        .limit(5)
+        .all()
+    )
+    top_workers = [{"name": w, "count": int(c)} for w, c in top_workers_q]
+
+    # --- Top 5 rutas ---
+    top_routes = []
+    routes_q = (
+        db.session.query(OperatorLog)
+        .filter(or_(
+            OperatorLog.route_id.isnot(None),
+            OperatorLog.route_other_origin.isnot(None),
+        ))
+        .all()
+    )
+    route_counter = {}
+    for log in routes_q:
+        if log.route:
+            lbl = log.route.label
+        elif log.route_other_origin:
+            dest = log.route_other_destination or ""
+            lbl = f"{log.route_other_origin} ➝ {dest}" if dest else log.route_other_origin
+        else:
+            lbl = "Sin ruta"
+        route_counter[lbl] = route_counter.get(lbl, 0) + 1
+    sorted_routes = sorted(route_counter.items(), key=lambda x: x[1], reverse=True)[:5]
+    top_routes = [{"route": r, "count": c} for r, c in sorted_routes]
+
+    return SimpleNamespace(
+        daily_labels=daily_labels,
+        daily_operators=daily_operators,
+        daily_drivers=daily_drivers,
+        daily_gestores=daily_gestores,
+        role_ops=role_ops,
+        role_drv=role_drv,
+        role_ges=role_ges,
+        top_workers=top_workers,
+        top_routes=top_routes,
+    )
+
 
 def _catalogs_for_filters():
     """Catálogos que la plantilla usa en los filtros."""
@@ -104,17 +253,94 @@ def dashboard():
         .all()
     )
     stats = _kpis()
+    charts = _dashboard_charts()
     workers, routes, units, projects = _catalogs_for_filters()
     filters = SimpleNamespace(start_date=None, end_date=None)
     return render_template(
         "admin/dashboard.html",
         last_ops=last_ops,
         stats=stats,
+        charts=charts,
         workers=workers,
         routes=routes,
         units=units,
         projects=projects,
         filters=filters,
+    )
+
+
+# ------------------------- Dispersiones de Diesel -------------------------
+@admin_bp.route("/dispersions")
+@login_required
+@roles_required("admin")
+def dispersions():
+    _ensure_admin()
+    today = date.today()
+
+    # Registros de dispersión (gestor de compras)
+    disp_logs = (
+        OperatorLog.query
+        .filter(OperatorLog.si_subtype == "compras")
+        .order_by(OperatorLog.created_at.desc())
+        .all()
+    )
+
+    # También incluir registros con project_name == "Dispersión de Diesel"
+    disp_logs_wa = (
+        OperatorLog.query
+        .filter(OperatorLog.project_name == "Dispersión de Diesel")
+        .order_by(OperatorLog.created_at.desc())
+        .all()
+    )
+    # Merge unique
+    seen_ids = {d.id for d in disp_logs}
+    for d in disp_logs_wa:
+        if d.id not in seen_ids:
+            disp_logs.append(d)
+            seen_ids.add(d.id)
+    disp_logs.sort(key=lambda x: x.created_at, reverse=True)
+
+    total_dispersions = len(disp_logs)
+    total_liters = sum(float(d.fuel_liters or 0) for d in disp_logs)
+
+    # Unidades únicas servidas
+    unit_ids = set()
+    for d in disp_logs:
+        if d.main_unit_id:
+            unit_ids.add(d.main_unit_id)
+    units_served = len(unit_ids)
+
+    avg_per_disp = round(total_liters / total_dispersions, 1) if total_dispersions > 0 else 0
+
+    # Top 5 unidades por litros
+    unit_liters = {}
+    for d in disp_logs:
+        unit_label = d.main_unit.code if d.main_unit else "Sin unidad"
+        unit_liters[unit_label] = unit_liters.get(unit_label, 0) + float(d.fuel_liters or 0)
+    top_units = sorted(unit_liters.items(), key=lambda x: x[1], reverse=True)[:5]
+
+    # Serie diaria (14 días)
+    disp_labels = []
+    disp_series = []
+    for i in range(14):
+        d = today - timedelta(days=13 - i)
+        disp_labels.append(d.strftime("%d/%m"))
+        day_sum = sum(
+            float(log.fuel_liters or 0) for log in disp_logs
+            if log.created_at and log.created_at.date() == d
+        )
+        disp_series.append(round(day_sum, 1))
+
+    return render_template(
+        "admin/dispersions.html",
+        disp_logs=disp_logs,
+        total_dispersions=total_dispersions,
+        total_liters=round(total_liters, 1),
+        units_served=units_served,
+        avg_per_disp=avg_per_disp,
+        top_units=top_units,
+        disp_labels=disp_labels,
+        disp_series=disp_series,
     )
 
 

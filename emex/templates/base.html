@@ -8,6 +8,8 @@
   <!-- CSS principal -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 
   <style>
     /* ========== NAVBAR PROFESIONAL MODERNA ========== */
@@ -402,6 +404,10 @@
             <li>
               <a class="nav-link {{ 'is-active' if ep.startswith('admin.warnings') or ep=='admin.warning_detail' }}"
                  href="{{ url_for('admin.warnings') }}">Advertencias</a>
+            </li>
+            <li>
+              <a class="nav-link {{ 'is-active' if ep == 'admin.dispersions' }}"
+                 href="{{ url_for('admin.dispersions') }}">⛽ Diesel</a>
             </li>
           {% else %}
             <li>

@@ -193,33 +193,82 @@ def evolution_webhook():
             # =============================================
 
             if role == "gestor":
-                # Gestor de Compras: solo crea FuelPurchase + log mínimo
-                if liters and liters > 0:
-                    fuel_purchase = FuelPurchase(
-                        created_at=log_date,
-                        provider=f"Dispersión WhatsApp — {worker_name}",
-                        liters_bought=liters,
-                        price_per_liter=0,
-                        total_cost=0,
-                        liters_dispersed=liters,  # ya dispersado a la unidad
-                        registered_by_id=user.id,
-                    )
-                    db.session.add(fuel_purchase)
+                # Gestor de Compras — soporta una o varias unidades
+                dispersiones = extracted_data.get("dispersiones")
+                if dispersiones and isinstance(dispersiones, list):
+                    # Multi-unidad
+                    for disp in dispersiones:
+                        d_unit_name = disp.get("unidad", "")
+                        d_liters = None
+                        try:
+                            d_liters = float(disp.get("diesel_litros", 0))
+                        except:
+                            pass
 
-                new_log = OperatorLog(
-                    worker_id=user.id,
-                    worker_name=worker_name,
-                    project_name="Dispersión de Diesel",
-                    has_fuel=(liters is not None and liters > 0),
-                    fuel_liters=liters,
-                    main_unit_id=unit_id,
-                    has_service_incident=False,
-                    si_kind="servicio",
-                    si_subtype="compras",
-                    notes=f"Dispersión de diesel registrada vía WhatsApp. Unidad: {extracted_unit or 'N/A'}. Litros: {liters}L.",
-                    created_at=log_date,
-                )
-                db.session.add(new_log)
+                        d_unit_id = None
+                        if d_unit_name:
+                            u = Unit.query.filter(
+                                (Unit.code.ilike(f"%{d_unit_name}%")) |
+                                (Unit.description.ilike(f"%{d_unit_name}%"))
+                            ).first()
+                            if u:
+                                d_unit_id = u.id
+
+                        if d_liters and d_liters > 0:
+                            fp = FuelPurchase(
+                                created_at=datetime.utcnow(),
+                                provider=f"Dispersión WhatsApp — {worker_name}",
+                                liters_bought=d_liters,
+                                price_per_liter=0,
+                                total_cost=0,
+                                liters_dispersed=d_liters,
+                                registered_by_id=user.id,
+                            )
+                            db.session.add(fp)
+
+                        new_log = OperatorLog(
+                            worker_id=user.id,
+                            worker_name=worker_name,
+                            project_name="Dispersión de Diesel",
+                            has_fuel=(d_liters is not None and d_liters > 0),
+                            fuel_liters=d_liters,
+                            main_unit_id=d_unit_id,
+                            has_service_incident=False,
+                            si_kind="servicio",
+                            si_subtype="compras",
+                            notes=f"Dispersión de diesel vía WhatsApp. Unidad: {d_unit_name}. Litros: {d_liters}L.",
+                            created_at=datetime.utcnow(),
+                        )
+                        db.session.add(new_log)
+                    print(f"[Gestor Multi] {len(dispersiones)} dispersiones registradas por {worker_name}")
+                else:
+                    # Una sola unidad (formato original)
+                    if liters and liters > 0:
+                        fuel_purchase = FuelPurchase(
+                            created_at=datetime.utcnow(),
+                            provider=f"Dispersión WhatsApp — {worker_name}",
+                            liters_bought=liters,
+                            price_per_liter=0,
+                            total_cost=0,
+                            liters_dispersed=liters,
+                            registered_by_id=user.id,
+                        )
+                        db.session.add(fuel_purchase)
+
+                    new_log = OperatorLog(
+                        worker_id=user.id,
+                        worker_name=worker_name,
+                        project_name="Dispersión de Diesel",
+                        has_fuel=(liters is not None and liters > 0),
+                        fuel_liters=liters,
+                        main_unit_id=unit_id,
+                        has_service_incident=False,
+                        si_kind="servicio",
+                        si_subtype="compras",
+                        notes=f"Dispersión de diesel vía WhatsApp. Unidad: {extracted_unit or 'N/A'}. Litros: {liters}L.",
+                        created_at=datetime.utcnow(),
+                    )
+                    db.session.add(new_log)
 
             elif role == "chofer":
                 full_notes = f"🚚 Viajes: {trips_text}\n📍 Ruta: {ruta}"
