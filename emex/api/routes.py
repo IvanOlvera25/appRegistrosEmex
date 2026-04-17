@@ -32,9 +32,14 @@ def evolution_webhook():
     if from_me:
         return jsonify({"status": "ignored", "reason": "sent by me"}), 200
 
-    # Guardar el remoteJid completo para enviar respuestas (soporta @lid y @s.whatsapp.net)
-    reply_jid = remote_jid
-    phone_number = remote_jid.split("@")[0]
+    # WhatsApp usa LID (Linked ID) que Evolution API v1 no puede resolver.
+    # El webhook v1 incluye un campo "sender" con el número real @s.whatsapp.net
+    if "@lid" in remote_jid:
+        sender = data.get("sender", "")
+        reply_jid = sender if sender else remote_jid
+    else:
+        reply_jid = remote_jid
+    phone_number = reply_jid.split("@")[0]
     
     # El objeto de mensaje en sí (qué contiene el texto, audio, etc)
     msg_obj = inner_data.get("message", {})
