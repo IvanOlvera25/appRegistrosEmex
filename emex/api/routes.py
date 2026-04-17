@@ -5,7 +5,7 @@ from flask import Blueprint, request, jsonify
 
 from ..extensions import db
 from ..models import User, WhatsappSession, OperatorLog, Unit, FuelPurchase
-from .evolution_client import send_whatsapp_message
+from .evolution_client import send_whatsapp_message, resolve_lid_to_phone
 from .openai_service import process_whatsapp_message
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
@@ -32,9 +32,20 @@ def evolution_webhook():
     if from_me:
         return jsonify({"status": "ignored", "reason": "sent by me"}), 200
 
-    # Usar el remoteJid completo para responder (v2.2.3 soporta @lid nativo)
-    reply_jid = remote_jid
-    phone_number = remote_jid.split("@")[0]
+    # Resolver LID a número real si es necesario
+    if "@lid" in remote_jid:
+        # Intentar resolver LID via API de contactos
+        resolved = resolve_lid_to_phone(remote_jid)
+        if resolved:
+            phone_number = resolved
+            print(f"[LID Resolved] {remote_jid} -> {phone_number}")
+        else:
+            # Loguear el payload completo para debug
+            print(f"[LID NOT RESOLVED] remoteJid={remote_jid}, full payload keys={list(data.keys())}, inner keys={list(inner_data.keys())}")
+            print(f"[LID DEBUG] pushName={inner_data.get('pushName')}, participant={inner_data.get('key',{}).get('participant')}")
+            phone_number = remote_jid.split("@")[0]
+    else:
+        phone_number = remote_jid.split("@")[0]
     
     # El objeto de mensaje en sí (qué contiene el texto, audio, etc)
     msg_obj = inner_data.get("message", {})
@@ -239,7 +250,8 @@ def evolution_webhook():
             reply_text = "❌ Hubo un error al intentar guardar tu registro en la base de datos."
 
 
-    # Enviar respuesta al usuario usando el remoteJid completo (soporta @lid en v2.2.3)
-    send_whatsapp_message(reply_jid, reply_text)
+    # Enviar respuesta al usuario usando el número resuelto
+    print(f"[WhatsApp Reply] Sending to phone_number={phone_number}")
+    send_whatsapp_message(phone_number, reply_text)
 
     return jsonify({"status": "success"}), 200
