@@ -237,7 +237,46 @@
     color: #991b1b;
   }
 
-  /* ========== ESTILOS DE TABLA MEJORADOS ========== */
+  /* ========== ESTILOS DE TABLA Y ACCORDION ========== */
+  .master-row { transition: background 0.2s; }
+  .master-row:hover { background: #f8fafc !important; cursor: pointer; }
+  .detail-panel {
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin: 0.5rem 1rem 1.5rem 3rem;
+    padding: 1.25rem 1.5rem;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+  }
+  .detail-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+  }
+  @media (max-width: 1024px) { .detail-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 600px) { .detail-grid { grid-template-columns: 1fr; } }
+  
+  .detail-block { display: flex; flex-direction: column; gap: 0.5rem; }
+  .detail-title {
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: var(--dark);
+    margin: 0 0 0.25rem 0;
+    border-bottom: 2px solid var(--border);
+    padding-bottom: 0.4rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .detail-item { font-size: 0.9rem; color: var(--dark); }
+  .detail-item strong { color: var(--gray); font-weight: 700; }
+  .detail-notes {
+    background: white; border: 1px dashed var(--border); border-radius: 8px;
+    padding: 0.75rem; font-size: 0.9rem; color: var(--dark);
+    margin-top: 0.25rem; font-family: monospace; white-space: pre-wrap;
+  }
+  /* Badge mod para detail */
+  .detail-item .fuel-badge { display: inline-flex; padding: 0.2rem 0.6rem; border-radius: 6px; font-size: 0.85rem; margin-left: 0.5rem; }
+  
   .service-card {
     background: var(--gray-light);
     border-radius: 12px;
@@ -1175,17 +1214,9 @@
             <th style="width: 40px;"><input type="checkbox" id="checkAll" aria-label="Seleccionar todos"></th>
             <th>Tipo</th>
             <th>Fecha</th>
-            <th>Proyecto</th>
             <th>Trabajador</th>
-            <th>Unidad</th>
-            <th>Accesorios</th>
-            <th>Ruta</th>
-            <th>Servicio/Inc.</th>
-            <th>Combustible</th>
-            <th>Tiempos</th>
-            <th>Extra</th>
-            <th>Notas</th>
-            <th>Acciones</th>
+            <th>Resumen Operativo</th>
+            <th style="text-align: right;">Acciones</th>
           </tr>
         </thead>
         <tbody>
@@ -1197,7 +1228,10 @@
           {% set main_unit = (r.main_unit.code if r.main_unit else (r.si_unit.code if r.si_unit else (r.fuel_unit.code
           if r.fuel_unit else ''))) %}
           {% set record_type = 'purchase' if is_purchase else ('driver' if is_driver else 'operator') %}
-          <tr data-id="{{ r.id }}" data-date="{{ r.created_at.strftime('%Y-%m-%d') }}"
+          
+          <!-- FILA MAESTRA -->
+          <tr class="master-row" onclick="toggleDetails('detail-{{ r.id }}', event)" 
+            data-id="{{ r.id }}" data-date="{{ r.created_at.strftime('%Y-%m-%d') }}"
             data-project="{{ (r.project.name if r.project else (r.project_name or ''))|lower }}"
             data-mainunit="{{ (main_unit or '')|lower }}" data-sikind="{{ (r.si_kind or '')|lower }}"
             data-sisubtype="{{ (r.si_subtype or '')|lower }}" data-over="{{ 1 if r.overtime else 0 }}"
@@ -1205,95 +1239,99 @@
             data-si="{{ 1 if r.has_service_incident else 0 }}" data-fuel="{{ 1 if r.has_fuel else 0 }}"
             data-kind="{{ record_type }}"
             data-text="{{ (r.notes or '')|lower }} {{ (route_lbl or '')|lower }} {{ (r.si_subtype or '')|lower }} {{ (main_unit or '')|lower }}">
-            <td><input type="checkbox" class="row-check"></td>
+            
+            <td onclick="event.stopPropagation()"><input type="checkbox" class="row-check"></td>
             <td>
               {% if is_purchase %}
-              <span class="type-badge purchase">🛒 Compras</span>
+              <span class="type-badge purchase">🛒 Compra</span>
               {% elif is_driver %}
               <span class="type-badge driver">🚚 Chofer</span>
               {% else %}
               <span class="type-badge operator">👷 Operador</span>
               {% endif %}
             </td>
-            <td style="white-space: nowrap;">{{ r.created_at.strftime("%Y-%m-%d %H:%M") }}</td>
-            <td>{{ r.project.name if r.project else (r.project_name or '—') }}</td>
-            <td><strong>{{ r.worker_name }}</strong></td>
-            <td>{{ main_unit or '—' }}</td>
+            <td style="white-space: nowrap; font-weight: 600; color: var(--gray);">{{ r.created_at.strftime("%d %b, %H:%M") }}</td>
+            <td><strong style="color: var(--dark);">{{ r.worker_name }}</strong></td>
             <td>
-              {% if r.accessories and r.accessories|length %}
-              {% for a in r.accessories %}<span class="chip">{{ a }}</span> {% endfor %}
-              {% else %}—{% endif %}
-            </td>
-            <td style="min-width: 200px;">{{ route_lbl }}</td>
-            <td>
-              {% if r.has_service_incident %}
               {% if is_purchase %}
-              <!-- VISTA DE COMPRAS -->
-              <div class="service-card purchase">
-                <div class="service-header">
-                  <span class="badge info-soft">🛒 Compra</span>
-                  <span class="service-cost">${{ "{:,.2f}".format(r.si_amount or 0) }}</span>
-                </div>
-                <div class="service-body">
-                  {% if r.notes and 'Proveedor:' in r.notes %}
-                  <div class="service-provider">🏢 {{ r.notes.split('Proveedor:')[1].split('\n')[0] }}</div>
-                  {% endif %}
-                  <div class="service-detail">{{ r.notes.split('\n')[0][:30] if r.notes else 'Sin detalles' }}...</div>
-                </div>
-              </div>
+                <span style="color:var(--gray); font-weight: 600;">Dispersión / Compra Diesel</span>
+              {% elif is_driver %}
+                <span class="chip" style="margin-bottom:2px">📍 {{ route_lbl }}</span>
+                {% if main_unit %}<span style="font-size: 0.8rem; color:var(--gray); margin-left: 0.5rem;">Unidad: <b>{{ main_unit }}</b></span>{% endif %}
               {% else %}
-              <!-- VISTA DE SERVICIOS / INCIDENCIAS -->
-              <div class="service-card {{ r.si_kind }}">
-                <div class="service-header">
-                  {% if r.si_kind == 'servicio' %}
-                  <span class="badge warning-soft">🔧 Servicio</span>
-                  {% else %}
-                  <span class="badge danger-soft">⚠️ Incidencia</span>
-                  {% endif %}
-                  <span class="service-cost">${{ "{:,.2f}".format(r.si_amount or 0) }}</span>
-                </div>
-                <div class="service-body">
-                  <div class="service-subtype">{{ r.si_subtype or "General" }}</div>
-                  <div class="service-unit">{{ main_unit or "Sin unidad" }}</div>
-                </div>
-              </div>
-              {% endif %}
-              {% else %}
-              <span class="text-muted">—</span>
+                <span class="chip" style="margin-bottom:2px">🏗️ {{ r.project.name if r.project else (r.project_name or 'Sin Proyecto') }}</span>
+                {% if main_unit %}<span style="font-size: 0.8rem; color:var(--gray); margin-left: 0.5rem;">Unidad: <b>{{ main_unit }}</b></span>{% endif %}
               {% endif %}
             </td>
-            <td>
-              {% if r.has_fuel %}
-              <div class="fuel-badge">
-                <span class="fuel-icon">⛽</span>
-                <span class="fuel-amount">{{ "{:,.1f}".format(r.fuel_liters) }} L</span>
+            <td style="text-align: right; white-space: nowrap;">
+              <button class="btn btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;" title="Ver detalles" onclick="toggleDetails('detail-{{ r.id }}', event)">
+                Resumen 🔽
+              </button>
+              <button class="btn btn-icon" style="padding: 0.4rem; border: 1px solid #fee2e2; background: #fff5f5;" title="Eliminar" onclick="event.stopPropagation(); confirmDelete('{{ r.id }}')">🗑️</button>
+            </td>
+          </tr>
+
+          <!-- FILA DETALLE -->
+          <tr class="detail-row" id="detail-{{ r.id }}" style="display: none;">
+            <td colspan="6" style="padding: 0; border-bottom: none; background: white;">
+              <div class="detail-panel">
+                <div class="detail-grid">
+                  
+                  <!-- Bloque Tiempos y Proyecto -->
+                  <div class="detail-block">
+                    <h4 class="detail-title">⏱️ Operación</h4>
+                    <div class="detail-item"><strong>Proyecto:</strong> {{ r.project.name if r.project else (r.project_name or '—') }}</div>
+                    {% if r.time_total or r.time_productive %}
+                    <div class="detail-item"><strong>Total / Prod:</strong> {{ "{:.1f}".format(r.time_total) if r.time_total else "-" }}h / <span class="text-success" style="font-weight: 800; color:var(--success);">{{ "{:.1f}".format(r.time_productive) if r.time_productive else "-" }}h</span></div>
+                    {% endif %}
+                    {% if r.overtime %}
+                    <div class="detail-item"><strong>H. Extra:</strong> <span class="badge dark">{{ "{:.1f}".format(r.overtime_hours) }}h</span></div>
+                    {% endif %}
+                  </div>
+
+                  <!-- Bloque Combustible -->
+                  <div class="detail-block">
+                    <h4 class="detail-title">⛽ Combustible</h4>
+                    {% if r.has_fuel %}
+                      <div class="detail-item" style="display:flex; align-items:center;">
+                        <strong>Carga:</strong> <div class="fuel-badge"><span class="fuel-amount">{{ "{:,.1f}".format(r.fuel_liters) }} L</span></div>
+                      </div>
+                      {% if r.fuel_unit %}<div class="detail-item"><strong>Unidad de carga:</strong> {{ r.fuel_unit.code }}</div>{% endif %}
+                    {% else %}
+                      <div class="detail-item" style="color: var(--gray);">Sin combustible registrado.</div>
+                    {% endif %}
+                  </div>
+
+                  <!-- Bloque S/I -->
+                  <div class="detail-block">
+                    <h4 class="detail-title">🔧 Servicio / Incidencia</h4>
+                    {% if r.has_service_incident %}
+                      <div class="detail-item">
+                        <span class="badge {{ 'warning-soft' if r.si_kind == 'servicio' else 'danger-soft' }}" style="margin-bottom:0.25rem;">
+                          {{ '🔧 Servicio' if r.si_kind == 'servicio' else '⚠️ Incidencia' }}
+                        </span>
+                      </div>
+                      <div class="detail-item"><strong>Subtipo:</strong> <span style="text-transform: capitalize;">{{ r.si_subtype or "General" }}</span></div>
+                      {% if r.si_unit %}<div class="detail-item"><strong>Unidad S/I:</strong> {{ r.si_unit.code }}</div>{% endif %}
+                      {% if r.si_amount %}<div class="detail-item"><strong>Costo:</strong> <span style="font-weight: 800; color: var(--dark);">${{ "{:,.2f}".format(r.si_amount) }}</span></div>{% endif %}
+                    {% else %}
+                      <div class="detail-item" style="color: var(--gray);">Ninguna registrada.</div>
+                    {% endif %}
+                  </div>
+
+                  <!-- Bloque Notas (Span 2) -->
+                  <div class="detail-block">
+                    <h4 class="detail-title">📝 Notas y Accesorios</h4>
+                    {% if r.accessories and r.accessories|length %}
+                      <div class="detail-item" style="margin-bottom:0.5rem;"><strong>Accesorios:</strong> 
+                        {% for a in r.accessories %}<span class="chip">{{ a }}</span> {% endfor %}
+                      </div>
+                    {% endif %}
+                    <div class="detail-notes">{{ r.notes | replace('\n', '<br>') | safe if r.notes else '<span style="color: #94a3b8;">Sin notas adicionales</span>' | safe }}</div>
+                  </div>
+
+                </div>
               </div>
-              <div class="fuel-unit">{{ r.fuel_unit.code if r.fuel_unit else "-" }}</div>
-              {% else %}
-              <span class="text-muted">—</span>
-              {% endif %}
-            </td>
-            <td style="white-space: nowrap;">
-              {% if r.time_total or r.time_productive %}
-              <div class="time-stats">
-                <span title="Total">{{ "{:.1f}".format(r.time_total) if r.time_total else "-" }}h</span>
-                <span class="divider">/</span>
-                <span title="Productivo" class="productive">{{ "{:.1f}".format(r.time_productive) if r.time_productive
-                  else "-" }}h</span>
-              </div>
-              {% else %}—{% endif %}
-            </td>
-            <td>
-              {% if r.overtime %}
-              <span class="badge dark">{{ "{:.1f}".format(r.overtime_hours) }}h</span>
-              {% else %}—{% endif %}
-            </td>
-            <td style="max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
-              title="{{ r.notes or '' }}">
-              {{ (r.notes or "—")[:60] }}
-            </td>
-            <td>
-              <button class="btn btn-icon btn-sm" title="Eliminar" onclick="confirmDelete('{{ r.id }}')">🗑️</button>
             </td>
           </tr>
           {% endfor %}
@@ -1417,7 +1455,27 @@
       row.style.display = '';
     });
 
+    // Ocultar detail-rows si el master-row padre está oculto
+    tableRows.forEach(row => {
+      const detailRow = document.getElementById('detail-' + row.getAttribute('data-id'));
+      if (detailRow) {
+        if (row.style.display === 'none') {
+          detailRow.style.display = 'none';
+        }
+      }
+    });
+
     updateVisibleCount();
+  }
+
+  // ====== Accordion Details ======
+  function toggleDetails(rowId, event) {
+    if(event) {
+      if (['BUTTON', 'INPUT'].includes(event.target.tagName)) return;
+    }
+    const detailRow = document.getElementById(rowId);
+    if (!detailRow) return;
+    detailRow.style.display = (detailRow.style.display === 'none') ? 'table-row' : 'none';
   }
 
   // Event listeners para los tabs
