@@ -38,8 +38,12 @@
             <input id="job_title" class="input" value="{{ emp.job_title or '' }}">
           </div>
           <div class="control mb-3">
-            <label class="label">Correo *</label>
-            <input id="email" type="email" class="input" value="{{ emp.email }}" required>
+            <label class="label">Correo</label>
+            <input id="email" type="email" class="input" value="{{ emp.email or '' }}">
+          </div>
+          <div class="control mb-3">
+            <label class="label">Celular (WhatsApp)</label>
+            <input id="phone" type="tel" class="input" value="{{ emp.phone or '' }}" placeholder="Ej. 521464...">
           </div>
 
           <div id="err" class="text-danger mb-2" style="display:none"></div>
@@ -61,10 +65,11 @@ function save(e){
   const payload = {
     name: document.getElementById('name').value.trim(),
     job_title: document.getElementById('job_title').value.trim(),
-    email: document.getElementById('email').value.trim()
+    email: document.getElementById('email').value.trim(),
+    phone: document.getElementById('phone').value.trim()
   };
   const err = document.getElementById('err');
-  if(!payload.name || !payload.email){ err.textContent='Nombre y correo son obligatorios.'; err.style.display='block'; return; }
+  if(!payload.name){ err.textContent='El nombre es obligatorio.'; err.style.display='block'; return; }
 
   fetch(`{{ url_for("admin.api_employees_update", user_id=0)[:-1] }}${id}`, {
     method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)

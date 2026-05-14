@@ -1495,8 +1495,9 @@ def api_employees_create():
     _ensure_admin()
     data = request.get_json() or {}
     name = (data.get("name") or "").strip()
-    # email puede venir vacío
+    # email y phone pueden venir vacíos
     email = (data.get("email") or "").strip().lower()
+    phone = (data.get("phone") or "").strip()
     job_title = (data.get("job_title") or "").strip()
 
     if not name:
@@ -1505,14 +1506,18 @@ def api_employees_create():
     if email:
         if db.session.query(User).filter_by(email=email).first():
             return jsonify(success=False, error="Ya existe un usuario con ese correo."), 409
+            
+    if phone:
+        if db.session.query(User).filter_by(phone=phone).first():
+            return jsonify(success=False, error="Ese celular ya está registrado en otro usuario."), 409
 
     import secrets
     temp_pw = "Emex-" + secrets.token_urlsafe(10)
-    u = User(name=name, email=(email or None), job_title=(job_title or None), role="worker")
+    u = User(name=name, email=(email or None), phone=(phone or None), job_title=(job_title or None), role="worker")
     u.set_password(temp_pw)
     db.session.add(u)
     db.session.commit()
-    return jsonify(success=True, user={"id": u.id, "name": u.name, "email": u.email, "job_title": u.job_title})
+    return jsonify(success=True, user={"id": u.id, "name": u.name, "email": u.email, "phone": u.phone, "job_title": u.job_title})
 
 @admin_bp.get("/api/employees/<int:user_id>", endpoint="api_employees_get")
 @login_required
@@ -1522,7 +1527,7 @@ def api_employees_get(user_id: int):
     u = db.session.get(User, user_id)
     if not u:
         return jsonify(success=False, error="Empleado no encontrado."), 404
-    return jsonify(success=True, user={"id": u.id, "name": u.name, "email": u.email, "job_title": u.job_title})
+    return jsonify(success=True, user={"id": u.id, "name": u.name, "email": u.email, "phone": u.phone, "job_title": u.job_title})
 
 # UPDATE
 @admin_bp.put("/api/employees/<int:user_id>", endpoint="api_employees_update")
@@ -1537,6 +1542,7 @@ def api_employees_update(user_id: int):
     data = request.get_json() or {}
     name = (data.get("name") or "").strip()
     email = (data.get("email") or "").strip().lower()
+    phone = (data.get("phone") or "").strip()
     job_title = (data.get("job_title") or "").strip()
 
     if not name:
@@ -1546,9 +1552,15 @@ def api_employees_update(user_id: int):
         other = db.session.query(User).filter(User.email == email, User.id != u.id).first()
         if other:
             return jsonify(success=False, error="Ese correo ya está en uso por otro usuario."), 409
+            
+    if phone:
+        other_phone = db.session.query(User).filter(User.phone == phone, User.id != u.id).first()
+        if other_phone:
+            return jsonify(success=False, error="Ese celular ya está en uso por otro usuario."), 409
 
     u.name = name
     u.email = (email or None)
+    u.phone = (phone or None)
     u.job_title = (job_title or None)
     try:
         db.session.commit()
@@ -1556,7 +1568,7 @@ def api_employees_update(user_id: int):
         db.session.rollback()
         return jsonify(success=False, error="Error de integridad."), 400
 
-    return jsonify(success=True, user={"id": u.id, "name": u.name, "email": u.email, "job_title": u.job_title})
+    return jsonify(success=True, user={"id": u.id, "name": u.name, "email": u.email, "phone": u.phone, "job_title": u.job_title})
 
 
 @admin_bp.delete("/api/employees/<int:user_id>", endpoint="api_employees_delete")

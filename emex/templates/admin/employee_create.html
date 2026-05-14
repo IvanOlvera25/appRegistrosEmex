@@ -56,7 +56,7 @@
   <div class="hero">
     <div>
       <h1 class="h4 fw-bold mb-1">Agregar empleado</h1>
-      <div class="opacity-75">Nombre, cargo y (opcional) correo</div>
+      <div class="opacity-75">Nombre, cargo, celular y correo</div>
     </div>
     <div class="back">
       <a class="btn btn-light btn-lg" href="{{ url_for('admin.employees_catalog') }}">← Catálogo</a>
@@ -100,6 +100,13 @@
             </div>
           </div>
 
+          <!-- Celular (opcional) -->
+          <div class="control mb-2">
+            <label class="label">Celular (opcional)</label>
+            <input id="phone" type="tel" class="input" placeholder="Ej. 521464... (número con código de país)">
+            <div class="hint mt-1">Este número se usa para el acceso por WhatsApp.</div>
+          </div>
+
           <!-- Correo (opcional) -->
           <div class="control mb-2">
             <label class="label">Correo (opcional)</label>
@@ -138,6 +145,7 @@ function save(e){
   e.preventDefault();
   const name = document.getElementById('name').value.trim();
   const emailRaw = document.getElementById('email').value.trim();
+  const phoneRaw = document.getElementById('phone').value.trim();
   const selValue = document.getElementById('job_title_select').value;
   const customValue = (document.getElementById('job_title_custom')?.value || '').trim();
   const jobTitle = (selValue === '__custom__') ? customValue : selValue;
@@ -147,7 +155,7 @@ function save(e){
     return showError('Escribe el cargo personalizado o elige uno de la lista.');
   }
 
-  const payload = { name, job_title: jobTitle, email: emailRaw };
+  const payload = { name, job_title: jobTitle, email: emailRaw, phone: phoneRaw };
 
   fetch('{{ url_for("admin.api_employees_create") }}', {
     method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)

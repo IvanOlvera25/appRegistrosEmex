@@ -27,20 +27,21 @@
   <div class="card">
     <div class="table-responsive">
       <table id="tbl">
-        <thead><tr><th>Nombre</th><th>Cargo</th><th>Correo</th><th>Acciones</th></tr></thead>
+        <thead><tr><th>Nombre</th><th>Cargo</th><th>Celular</th><th>Correo</th><th>Acciones</th></tr></thead>
         <tbody>
           {% for u in users %}
           <tr>
             <td>{{ u.name }}</td>
             <td>{{ u.job_title or '—' }}</td>
-            <td>{{ u.email }}</td>
+            <td>{{ u.phone or '—' }}</td>
+            <td>{{ u.email or '—' }}</td>
             <td>
               <a class="btn btn-outline-primary btn-sm" href="{{ url_for('admin.employees_edit', user_id=u.id) }}">Editar</a>
               <button class="btn btn-outline-danger btn-sm" onclick="delEmp({{ u.id }})">Eliminar</button>
             </td>
           </tr>
           {% else %}
-          <tr><td colspan="4" class="text-center text-muted">Sin empleados</td></tr>
+          <tr><td colspan="5" class="text-center text-muted">Sin empleados</td></tr>
           {% endfor %}
         </tbody>
       </table>
