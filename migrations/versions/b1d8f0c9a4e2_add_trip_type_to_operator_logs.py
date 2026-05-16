@@ -7,6 +7,7 @@ Create Date: 2026-05-16 00:00:00.000000
 """
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy import inspect
 
 
 # revision identifiers, used by Alembic.
@@ -17,10 +18,18 @@ depends_on = None
 
 
 def upgrade():
-    with op.batch_alter_table("operator_logs", schema=None) as batch_op:
-        batch_op.add_column(sa.Column("trip_type", sa.String(length=80), nullable=True))
+    bind = op.get_bind()
+    inspector = inspect(bind)
+    columns = {col["name"] for col in inspector.get_columns("operator_logs")}
+    if "trip_type" not in columns:
+        with op.batch_alter_table("operator_logs", schema=None) as batch_op:
+            batch_op.add_column(sa.Column("trip_type", sa.String(length=80), nullable=True))
 
 
 def downgrade():
-    with op.batch_alter_table("operator_logs", schema=None) as batch_op:
-        batch_op.drop_column("trip_type")
+    bind = op.get_bind()
+    inspector = inspect(bind)
+    columns = {col["name"] for col in inspector.get_columns("operator_logs")}
+    if "trip_type" in columns:
+        with op.batch_alter_table("operator_logs", schema=None) as batch_op:
+            batch_op.drop_column("trip_type")
