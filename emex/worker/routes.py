@@ -236,12 +236,16 @@ def choferes():
         project_text = (request.form.get("project_text") or "").strip()
         main_unit_id = to_int(request.form.get("main_unit_id") or request.form.get("main_unit"))
         unit_accessories = request.form.getlist("unit_accessories") or []
+        trip_type = (request.form.get("trip_type") or "").strip()
 
         if not worker_id and not worker_name_manual:
             flash("Selecciona un trabajador o escribe uno manual.", "danger")
             return redirect(url_for("worker.choferes"))
         if not project_id and not project_text:
             flash("Selecciona una obra o escribe una manual.", "danger")
+            return redirect(url_for("worker.choferes"))
+        if not trip_type:
+            flash("Indica el tipo de viaje.", "danger")
             return redirect(url_for("worker.choferes"))
 
         # ---- Ruta ----
@@ -295,6 +299,7 @@ def choferes():
             route_id=route_id,
             route_other_origin=route_other_origin,
             route_other_destination=route_other_destination,
+            trip_type=trip_type,
             # S/I
             has_service_incident=has_si,
             si_kind=si_kind,
@@ -375,7 +380,7 @@ def choferes():
 
         if trips_notes:
             existing_notes = entry.notes or ""
-            trip_summary = f"🚚 VIAJES ({total_trips_count} total):\n" + "\n".join(trips_notes)
+            trip_summary = f"🚚 VIAJES ({total_trips_count} total)\nTipo de viaje: {trip_type}\n" + "\n".join(trips_notes)
             entry.notes = f"{trip_summary}\n\n{existing_notes}".strip() if existing_notes else trip_summary
 
         db.session.add(entry)

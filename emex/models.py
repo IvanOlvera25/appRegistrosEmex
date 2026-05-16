@@ -163,6 +163,7 @@ class OperatorLog(db.Model):
     route = db.relationship("Route", backref="operator_logs")
     route_other_origin = db.Column(db.String(120), nullable=True)
     route_other_destination = db.Column(db.String(120), nullable=True)
+    trip_type = db.Column(db.String(80), nullable=True)
 
     # Servicio/Incidencia
     has_service_incident = db.Column(db.Boolean, default=False)
@@ -403,4 +404,3 @@ class WhatsappSession(db.Model):
 
     def __repr__(self):
         return f"<WhatsappSession {self.phone} - state:{self.state}>"
-

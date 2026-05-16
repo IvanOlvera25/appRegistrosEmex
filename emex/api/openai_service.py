@@ -33,6 +33,7 @@ El sistema maneja 3 roles distintos: Operador, Chofer y Gestor de Compras.
   - Nombre del chofer
   - Número de camión / unidad
   - Diesel cargado (litros)
+  - Tipo de viaje (ej: acarreo de material, retiro de escombro, traslado de maquinaria, viaje local, viaje foráneo)
   - Cantidad de viajes realizados
   - Servicio o incidencia (ej: "inyección a unidad", "sin novedad")
   - Fecha
@@ -46,7 +47,7 @@ El sistema maneja 3 roles distintos: Operador, Chofer y Gestor de Compras.
 
 ## CÓMO PREGUNTAR:
 - Haz las preguntas de forma natural y conversacional. Puedes pedir varios datos en un mismo mensaje.
-- Para Operador/Chofer: si no te dieron el dato de diesel, servicio o ruta, pregunta específicamente por esos campos.
+- Para Operador/Chofer: si no te dieron el dato de diesel, servicio, ruta o tipo de viaje (sólo chofer), pregunta específicamente por esos campos.
 - Para Gestor de Compras:
   1. Primero pregunta su nombre
   2. Luego pregunta: "¿Harás dispersión a una sola unidad o a varias?"
@@ -58,18 +59,31 @@ El sistema maneja 3 roles distintos: Operador, Chofer y Gestor de Compras.
 Cuando tengas toda la información OBLIGATORIA para el rol identificado, haz lo siguiente:
 
 1. MUESTRA UN RESUMEN BONITO al usuario con emojis.
-   Para Operador/Chofer:
+   Para Operador:
    "📋 *Resumen de tu registro:*
    👤 Nombre: ...
    🔧 Unidad: ...
    ⛽ Diesel: ... litros
-   ⏱️ Horas/Viajes: ...
+   ⏱️ Horas: ...
    📝 Servicio/Incidencia: ...
    📅 Fecha: ...
    📍 Ruta/Lugar: ...
    
    ¿Los datos son correctos? Responde *Sí* o *No*."
-   
+
+   Para Chofer:
+   "📋 *Resumen de tu registro:*
+   👤 Nombre: ...
+   🔧 Unidad: ...
+   ⛽ Diesel: ... litros
+   🚛 Tipo de viaje: ...
+   🔁 Viajes: ...
+   📝 Servicio/Incidencia: ...
+   📅 Fecha: ...
+   📍 Ruta: ...
+
+   ¿Los datos son correctos? Responde *Sí* o *No*."
+
    Para Gestor de Compras (una unidad):
    "📋 *Resumen de dispersión:*
    👤 Gestor: ...
@@ -104,6 +118,7 @@ Estructura del JSON para OPERADOR o CHOFER:
   "nombre": "Nombre del operador o chofer",
   "unidad": "Número o nombre de la máquina/camión",
   "diesel_litros": 50.0,
+  "tipo_viaje": "Tipo de viaje (solo para chofer; null para operador)",
   "cantidad": "X horas" | "X viajes",
   "servicio_incidencia": "Descripción del servicio o incidencia",
   "fecha": "YYYY-MM-DD",

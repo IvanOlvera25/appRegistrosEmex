@@ -3,7 +3,7 @@ import os
 import click
 from flask import Flask, redirect, url_for
 from dotenv import load_dotenv
-from sqlalchemy import text
+from sqlalchemy import inspect, text
 from flask_compress import Compress
 
 # ── Cargar .env ANTES de cualquier import que use os.getenv() ──
@@ -17,6 +17,29 @@ from emex.auth.routes import auth_bp
 from emex.worker.routes import worker_bp
 from emex.admin.routes import admin_bp
 from emex.api.routes import api_bp
+
+
+def _ensure_runtime_schema(app):
+    """
+    Parche idempotente para despliegues donde no siempre se corre Flask-Migrate.
+    No reemplaza las migraciones; sólo agrega columnas compatibles que falten.
+    """
+    if os.getenv("AUTO_SCHEMA_FIX", "1") != "1":
+        return
+
+    with app.app_context():
+        try:
+            inspector = inspect(db.engine)
+            if not inspector.has_table("operator_logs"):
+                return
+            columns = {col["name"] for col in inspector.get_columns("operator_logs")}
+            if "trip_type" not in columns:
+                db.session.execute(text("ALTER TABLE operator_logs ADD COLUMN trip_type VARCHAR(80) NULL"))
+                db.session.commit()
+                app.logger.info("AUTO_SCHEMA_FIX: columna operator_logs.trip_type creada.")
+        except Exception as exc:
+            db.session.rollback()
+            app.logger.warning("AUTO_SCHEMA_FIX no pudo validar/actualizar el esquema: %s", exc)
 
 
 def create_app():
@@ -138,5 +161,7 @@ def create_app():
     @app.get("/healthz")
     def healthz():
         return {"ok": True}, 200
+
+    _ensure_runtime_schema(app)
 
     return app

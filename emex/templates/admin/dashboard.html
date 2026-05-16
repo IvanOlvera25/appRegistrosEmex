@@ -1238,7 +1238,7 @@
             data-worker="{{ (r.worker_name or '')|lower }}" data-route="{{ (route_lbl or '')|lower }}"
             data-si="{{ 1 if r.has_service_incident else 0 }}" data-fuel="{{ 1 if r.has_fuel else 0 }}"
             data-kind="{{ record_type }}"
-            data-text="{{ (r.notes or '')|lower }} {{ (route_lbl or '')|lower }} {{ (r.si_subtype or '')|lower }} {{ (main_unit or '')|lower }}">
+            data-text="{{ (r.notes or '')|lower }} {{ (route_lbl or '')|lower }} {{ (r.trip_type or '')|lower }} {{ (r.si_subtype or '')|lower }} {{ (main_unit or '')|lower }}">
             
             <td onclick="event.stopPropagation()"><input type="checkbox" class="row-check"></td>
             <td>
@@ -1257,6 +1257,7 @@
                 <span style="color:var(--gray); font-weight: 600;">Dispersión / Compra Diesel</span>
               {% elif is_driver %}
                 <span class="chip" style="margin-bottom:2px">📍 {{ route_lbl }}</span>
+                {% if r.trip_type %}<span style="font-size: 0.8rem; color:var(--gray); margin-left: 0.5rem;">Tipo: <b>{{ r.trip_type }}</b></span>{% endif %}
                 {% if main_unit %}<span style="font-size: 0.8rem; color:var(--gray); margin-left: 0.5rem;">Unidad: <b>{{ main_unit }}</b></span>{% endif %}
               {% else %}
                 <span class="chip" style="margin-bottom:2px">🏗️ {{ r.project.name if r.project else (r.project_name or 'Sin Proyecto') }}</span>
@@ -1281,6 +1282,9 @@
                   <div class="detail-block">
                     <h4 class="detail-title">⏱️ Operación</h4>
                     <div class="detail-item"><strong>Proyecto:</strong> {{ r.project.name if r.project else (r.project_name or '—') }}</div>
+                    {% if r.trip_type %}
+                    <div class="detail-item"><strong>Tipo de viaje:</strong> {{ r.trip_type }}</div>
+                    {% endif %}
                     {% if r.time_total or r.time_productive %}
                     <div class="detail-item"><strong>Total / Prod:</strong> {{ "{:.1f}".format(r.time_total) if r.time_total else "-" }}h / <span class="text-success" style="font-weight: 800; color:var(--success);">{{ "{:.1f}".format(r.time_productive) if r.time_productive else "-" }}h</span></div>
                     {% endif %}

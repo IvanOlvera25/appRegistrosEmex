@@ -170,6 +170,7 @@ def evolution_webhook():
 
             # --- Ruta ---
             ruta = extracted_data.get("ruta") or ""
+            trip_type = str(extracted_data.get("tipo_viaje") or "").strip()
 
             # --- Cantidad: horas (operador) o viajes (chofer) ---
             cantidad_raw = extracted_data.get("cantidad") or ""
@@ -271,7 +272,7 @@ def evolution_webhook():
                     db.session.add(new_log)
 
             elif role == "chofer":
-                full_notes = f"🚚 Viajes: {trips_text}\n📍 Ruta: {ruta}"
+                full_notes = f"🚚 Viajes: {trips_text}\n🚛 Tipo de viaje: {trip_type or 'No especificado'}\n📍 Ruta: {ruta}"
                 if servicio:
                     full_notes += f"\n🔧 Servicio/Incidencia: {servicio}"
 
@@ -283,6 +284,7 @@ def evolution_webhook():
                     fuel_liters=liters,
                     main_unit_id=unit_id,
                     route_other_origin=ruta,
+                    trip_type=trip_type or None,
                     has_service_incident=has_si,
                     si_kind="incidencia" if has_si else None,
                     si_subtype=servicio if has_si else None,
