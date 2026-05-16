@@ -6,6 +6,7 @@ from types import SimpleNamespace
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_user, logout_user, login_required, current_user
 from sqlalchemy import func, case
+from werkzeug.exceptions import BadRequest
 
 from ..models import User, OperatorLog
 from ..extensions import db
@@ -76,47 +77,6 @@ def login():
         .order_by(User.name.asc())
         .all()
     )
-
-    if request.method == "POST":
-        mode = (request.form.get("mode") or "admin").lower()
-        remember = bool(request.form.get("remember"))
-
-        # -------- Empleado: selecciona su nombre + password --------
-        if mode == "employee":
-            emp_id = request.form.get("employee_id") or ""
-            password = request.form.get("password") or ""
-            if not emp_id.isdigit():
-                flash("Selecciona tu nombre del catálogo.", "danger")
-                return render_template("auth/login.html", employees=employees)
-
-            user = User.query.get(int(emp_id))
-            if not user or user.role != "worker" or not user.password_hash:
-                flash("Empleado no válido o sin cuenta activa.", "danger")
-                return render_template("auth/login.html", employees=employees)
-
-            if not user.check_password(password):
-                flash("Contraseña incorrecta.", "danger")
-                return render_template("auth/login.html", employees=employees)
-
-            login_user(user, remember=remember)
-            flash("¡Bienvenido(a)!", "success")
-            return redirect(url_for("auth.home"))
-
-        # -------- Administrador: correo + password --------
-        email = (request.form.get("email") or "").strip().lower()
-        password = request.form.get("password") or ""
-        user = User.query.filter(
-            func.lower(User.email) == email,
-            User.role == "admin"
-        ).first()
-
-        if not user or not user.check_password(password):
-            flash("Correo o contraseña inválidos.", "danger")
-            return render_template("auth/login.html", employees=employees)
-
-        login_user(user, remember=remember)
-        flash("¡Bienvenido(a)!", "success")
-        return redirect(url_for("auth.home"))
 
     # GET
     return render_template("auth/login.html", employees=employees)

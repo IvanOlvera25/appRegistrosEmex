@@ -86,6 +86,10 @@ def create_app():
     def seed_units(reset, hard):
         """Crea un set de unidades de ejemplo (evita duplicados por code)."""
         from emex.models import Unit
+        data = [
+            ("EXC-001", "QRO-123-A", "Excavadora CAT 320", "excavadora"),
+            ("RET-010", "QRO-987-B", "Retro JCB 3CX", "retro"),
+        ]
 
         if reset:
             if hard:

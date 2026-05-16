@@ -280,7 +280,7 @@ def dispersions():
     # Registros de dispersión (gestor de compras)
     disp_logs = (
         OperatorLog.query
-        .filter(OperatorLog.si_subtype == "compras")
+        .filter(or_(OperatorLog.si_subtype == "compras", OperatorLog.fuel_purchase_id.isnot(None)))
         .order_by(OperatorLog.created_at.desc())
         .all()
     )
@@ -306,8 +306,9 @@ def dispersions():
     # Unidades únicas servidas
     unit_ids = set()
     for d in disp_logs:
-        if d.main_unit_id:
-            unit_ids.add(d.main_unit_id)
+        served_unit_id = d.fuel_unit_id or d.main_unit_id
+        if served_unit_id:
+            unit_ids.add(served_unit_id)
     units_served = len(unit_ids)
 
     avg_per_disp = round(total_liters / total_dispersions, 1) if total_dispersions > 0 else 0
@@ -315,7 +316,8 @@ def dispersions():
     # Top 5 unidades por litros
     unit_liters = {}
     for d in disp_logs:
-        unit_label = d.main_unit.code if d.main_unit else "Sin unidad"
+        served_unit = d.fuel_unit or d.main_unit
+        unit_label = served_unit.code if served_unit else "Sin unidad"
         unit_liters[unit_label] = unit_liters.get(unit_label, 0) + float(d.fuel_liters or 0)
     top_units = sorted(unit_liters.items(), key=lambda x: x[1], reverse=True)[:5]
 
@@ -584,7 +586,10 @@ def units():
         .outerjoin(
             OperatorLog,
             and_(
-                OperatorLog.main_unit_id == Unit.id,
+                or_(
+                    OperatorLog.main_unit_id == Unit.id,
+                    OperatorLog.fuel_unit_id == Unit.id,
+                ),
                 OperatorLog.created_at >= start,
             ),
         )
@@ -606,7 +611,10 @@ def units():
         .outerjoin(
             OperatorLog,
             and_(
-                OperatorLog.main_unit_id == Unit.id,
+                or_(
+                    OperatorLog.main_unit_id == Unit.id,
+                    OperatorLog.si_unit_id == Unit.id,
+                ),
                 OperatorLog.created_at >= start,
             ),
         )
@@ -683,7 +691,10 @@ def unit_detail(unit_id: int):
         day_sum = float(
             db.session.query(func.coalesce(func.sum(OperatorLog.fuel_liters), 0.0))
             .filter(
-                OperatorLog.main_unit_id == unit_id,
+                or_(
+                    OperatorLog.main_unit_id == unit_id,
+                    OperatorLog.fuel_unit_id == unit_id,
+                ),
                 func.date(OperatorLog.created_at) == d
             )
             .scalar() or 0.0
@@ -740,7 +751,7 @@ def unit_detail(unit_id: int):
             db.session.query(func.coalesce(func.sum(OperatorLog.fuel_liters), 0.0))
             .filter(OperatorLog.created_at >= (today - timedelta(days=30))).scalar() or 0.0
         ),
-        diesel_cost_month=0,
+        diesel_cost_month=sum(r.fuel_cost for r in records),
         si_inc_month=0,
     )
 
@@ -801,7 +812,7 @@ def save_sale(unit_id):
         return jsonify(success=False, error="Monto de venta inválido."), 400
 
     rec = db.session.get(OperatorLog, record_id)
-    if not rec or rec.main_unit_id != unit_id:
+    if not rec or unit_id not in (rec.main_unit_id, rec.fuel_unit_id, rec.si_unit_id):
         return jsonify(success=False, error="Registro no encontrado para esta unidad."), 404
 
     rec.sale_amount = sale_amount
@@ -811,8 +822,8 @@ def save_sale(unit_id):
         rec.sale_registered_at = datetime.utcnow()
     db.session.commit()
 
-    fuel_cost = float(rec.fuel_liters or 0) * 28.5
-    service_cost = float(rec.si_amount or 0)
+    fuel_cost = rec.fuel_cost
+    service_cost = rec.service_cost
     utility = sale_amount - (fuel_cost + service_cost)
 
     return jsonify(success=True, utility=utility, formatted_utility=f"${utility:,.2f}")
@@ -831,14 +842,29 @@ def get_period_data(unit_id):
 
     total_fuel = float(
         db.session.query(func.coalesce(func.sum(OperatorLog.fuel_liters), 0.0))
-        .filter(OperatorLog.main_unit_id == unit_id, OperatorLog.created_at >= start)
+        .filter(
+            or_(
+                OperatorLog.main_unit_id == unit_id,
+                OperatorLog.fuel_unit_id == unit_id,
+            ),
+            OperatorLog.created_at >= start,
+        )
         .scalar() or 0.0
     )
-    fuel_cost = total_fuel * 28.5
+    fuel_cost = sum(
+        r.fuel_cost
+        for r in OperatorLog.query.filter(
+            or_(
+                OperatorLog.main_unit_id == unit_id,
+                OperatorLog.fuel_unit_id == unit_id,
+            ),
+            OperatorLog.created_at >= start,
+        ).all()
+    )
     services = int(
         db.session.query(func.count(OperatorLog.id))
         .filter(
-            OperatorLog.main_unit_id == unit_id,
+            or_(OperatorLog.main_unit_id == unit_id, OperatorLog.si_unit_id == unit_id),
             OperatorLog.created_at >= start,
             OperatorLog.has_service_incident.is_(True),
             func.lower(func.coalesce(OperatorLog.si_kind, "")) == "servicio",
@@ -847,7 +873,7 @@ def get_period_data(unit_id):
     incidents = int(
         db.session.query(func.count(OperatorLog.id))
         .filter(
-            OperatorLog.main_unit_id == unit_id,
+            or_(OperatorLog.main_unit_id == unit_id, OperatorLog.si_unit_id == unit_id),
             OperatorLog.created_at >= start,
             OperatorLog.has_service_incident.is_(True),
             func.lower(func.coalesce(OperatorLog.si_kind, "")) == "incidencia",
