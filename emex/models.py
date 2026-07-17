@@ -386,6 +386,115 @@ class FuelPurchase(db.Model):
 
 
 # =========================
+# NUEVO: Planeación diaria
+# =========================
+class DailyPlan(db.Model):
+    __tablename__ = "daily_plans"
+
+    id = db.Column(db.Integer, primary_key=True)
+    plan_date = db.Column(db.Date, nullable=False, index=True)
+    plan_type = db.Column(db.String(20), nullable=False)  # 'operador'|'chofer'|'mantenimiento'|'compras'
+
+    worker_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
+    worker = db.relationship("User", foreign_keys=[worker_id])
+    worker_name = db.Column(db.String(120), nullable=False)  # snapshot/fallback
+
+    notes = db.Column(db.Text, nullable=True)  # notas generales del plan
+
+    created_by_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
+    created_by = db.relationship("User", foreign_keys=[created_by_id])
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Validación (check al final del día)
+    validated_at = db.Column(db.DateTime, nullable=True)
+    validated_by_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
+    validated_by = db.relationship("User", foreign_keys=[validated_by_id])
+
+    items = db.relationship(
+        "PlanItem",
+        backref="plan",
+        cascade="all, delete-orphan",
+        order_by="PlanItem.id",
+    )
+
+    # ---- Etiquetas de presentación ----
+    TYPE_LABELS = {
+        "operador": "Operador",
+        "chofer": "Chofer",
+        "mantenimiento": "Mantenimiento",
+        "compras": "Gestor de compras",
+    }
+
+    @property
+    def type_label(self):
+        return self.TYPE_LABELS.get(self.plan_type, (self.plan_type or "—").capitalize())
+
+    @property
+    def status(self):
+        """Estado global derivado de los ítems."""
+        st = [i.status for i in self.items]
+        if not st:
+            return "vacío"
+        if all(s == "cumplido" for s in st):
+            return "cumplido"
+        if all(s == "no_cumplido" for s in st):
+            return "no_cumplido"
+        if any(s == "pendiente" for s in st):
+            return "pendiente"
+        return "parcial"
+
+    @property
+    def is_validated(self):
+        return self.validated_at is not None
+
+    @property
+    def done_count(self):
+        return sum(1 for i in self.items if i.status == "cumplido")
+
+    def __repr__(self):
+        return f"<DailyPlan {self.worker_name} {self.plan_date} ({self.plan_type})>"
+
+
+class PlanItem(db.Model):
+    __tablename__ = "plan_items"
+
+    id = db.Column(db.Integer, primary_key=True)
+    plan_id = db.Column(db.Integer, db.ForeignKey("daily_plans.id"), nullable=False)
+
+    description = db.Column(db.Text, nullable=False)  # la tarea
+
+    unit_id = db.Column(db.Integer, db.ForeignKey("units.id"), nullable=True)
+    unit = db.relationship("Unit", foreign_keys=[unit_id])
+
+    project_id = db.Column(db.Integer, db.ForeignKey("projects.id"), nullable=True)  # obra (operador)
+    project = db.relationship("Project", foreign_keys=[project_id])
+
+    route_id = db.Column(db.Integer, db.ForeignKey("routes.id"), nullable=True)  # ruta (chofer)
+    route = db.relationship("Route", foreign_keys=[route_id])
+
+    trip_type = db.Column(db.String(80), nullable=True)  # tipo de viaje (chofer)
+    quantity = db.Column(db.String(60), nullable=True)   # "3 viajes", "200 L", "$5,000" (texto libre)
+
+    is_extra = db.Column(db.Boolean, default=False)              # salió en el día, no planeado
+    status = db.Column(db.String(20), default="pendiente")      # 'pendiente'|'cumplido'|'no_cumplido'
+    justification = db.Column(db.Text, nullable=True)           # por qué no se cumplió / nota
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    @property
+    def location_label(self):
+        """Texto de obra/ruta según lo que tenga el ítem."""
+        if self.project:
+            return self.project.label if hasattr(self.project, "label") else self.project.name
+        if self.route:
+            return self.route.label
+        return None
+
+    def __repr__(self):
+        return f"<PlanItem {self.description[:30]} ({self.status})>"
+
+
+# =========================
 # Sesiones de WhatsApp (Chatbot)
 # =========================
 class WhatsappSession(db.Model):

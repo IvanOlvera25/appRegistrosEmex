@@ -8,8 +8,11 @@ from flask_login import login_user, logout_user, login_required, current_user
 from sqlalchemy import func, case
 from werkzeug.exceptions import BadRequest
 
-from ..models import User, OperatorLog
+from datetime import timedelta
+
+from ..models import User, OperatorLog, DailyPlan
 from ..extensions import db
+from ..timeutils import today_local
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -239,4 +242,16 @@ def user_panel():
         .all()
     )
 
-    return render_template("auth/user_panel.html", stats=stats, logs=logs)
+    # Mi planeación de hoy y mañana (solo lectura, hora de México)
+    today = today_local()
+    my_plans = (
+        DailyPlan.query
+        .filter(
+            DailyPlan.worker_id == uid,
+            DailyPlan.plan_date.in_([today, today + timedelta(days=1)])
+        )
+        .order_by(DailyPlan.plan_date.asc())
+        .all()
+    )
+
+    return render_template("auth/user_panel.html", stats=stats, logs=logs, my_plans=my_plans, today=today)

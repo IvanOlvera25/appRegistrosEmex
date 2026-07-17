@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}Planeación · EMEX{% endblock %}
+
+{% block head_extra %}
+<style>
+  .plan-badge{ display:inline-block; padding:.2rem .6rem; border-radius:999px; font-size:.78rem; font-weight:800; }
+  .plan-badge.pendiente{ background:#f1f5f9; color:#475569; }
+  .plan-badge.cumplido{ background:#dcfce7; color:#166534; }
+  .plan-badge.no_cumplido{ background:#fee2e2; color:#991b1b; }
+  .plan-badge.parcial{ background:#fef3c7; color:#92400e; }
+  .plan-badge.vacío, .plan-badge.vacio{ background:#f1f5f9; color:#94a3b8; }
+  .plan-filters{ display:flex; flex-wrap:wrap; gap:10px; align-items:end; }
+  .plan-filters label{ display:flex; flex-direction:column; gap:4px; font-weight:700; font-size:.85rem; color:#475569; }
+  .plan-filters input, .plan-filters select{ padding:.5rem .6rem; border:1px solid #e2e8f0; border-radius:10px; background:#fff; }
+  .date-nav{ display:flex; align-items:center; gap:8px; }
+  .date-nav .day{ font-weight:900; font-size:1.05rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="dashboard">
+  <header class="dash-head">
+    <div>
+      <h1 class="title">Planeación diaria</h1>
+      <p class="subtitle">Arma y valida la planeación de operadores, choferes, mantenimiento y compras.</p>
+    </div>
+    <div class="dash-actions">
+      <a class="btn btn-primary" href="{{ url_for('planning.new', date=day.isoformat()) }}">+ Nueva planeación</a>
+    </div>
+  </header>
+
+  <section class="card">
+    <div class="date-nav" style="justify-content:space-between; margin-bottom:12px; flex-wrap:wrap; gap:10px">
+      <div class="date-nav">
+        <a class="btn subtle" href="{{ url_for('planning.index', date=prev_day.isoformat(), worker_id=sel_worker_id or '', type=sel_type) }}">◀</a>
+        <span class="day">
+          {{ day.strftime('%d/%m/%Y') }}
+          {% if day == today %}<span class="plan-badge cumplido">Hoy</span>{% endif %}
+        </span>
+        <a class="btn subtle" href="{{ url_for('planning.index', date=next_day.isoformat(), worker_id=sel_worker_id or '', type=sel_type) }}">▶</a>
+      </div>
+      <form method="get" class="plan-filters">
+        <label>Fecha
+          <input type="date" name="date" value="{{ day.isoformat() }}">
+        </label>
+        <label>Trabajador
+          <select name="worker_id">
+            <option value="">— Todos —</option>
+            {% for w in workers %}
+              <option value="{{ w.id }}" {{ 'selected' if sel_worker_id == w.id }}>{{ w.name }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>Tipo
+          <select name="type">
+            <option value="">— Todos —</option>
+            {% for t in plan_types %}
+              <option value="{{ t }}" {{ 'selected' if sel_type == t }}>{{ t.capitalize() }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <button class="btn btn-primary" type="submit">Filtrar</button>
+      </form>
+    </div>
+
+    {% if plans %}
+    <div class="table-wrap">
+      <table class="table">
+        <thead class="sticky">
+          <tr>
+            <th>Trabajador</th>
+            <th>Tipo</th>
+            <th>Tareas</th>
+            <th>Estado</th>
+            <th>Validada</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in plans %}
+          <tr>
+            <td><strong>{{ p.worker_name }}</strong></td>
+            <td>{{ p.type_label }}</td>
+            <td>{{ p.done_count }} / {{ p.items|length }} cumplidas</td>
+            <td><span class="plan-badge {{ p.status }}">{{ p.status.replace('_',' ').capitalize() }}</span></td>
+            <td>{{ '✅' if p.is_validated else '—' }}</td>
+            <td class="nowrap">
+              <a class="btn subtle" href="{{ url_for('planning.detail', plan_id=p.id) }}">Abrir / validar</a>
+              <form method="post" action="{{ url_for('planning.delete', plan_id=p.id) }}" style="display:inline"
+                    onsubmit="return confirm('¿Eliminar la planeación de {{ p.worker_name }}?');">
+                <button class="btn subtle" type="submit">Eliminar</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+      <div class="empty">
+        <div class="empty-emoji">🗓️</div>
+        <p>No hay planeaciones para {{ day.strftime('%d/%m/%Y') }}.</p>
+        <a class="btn btn-primary" href="{{ url_for('planning.new', date=day.isoformat()) }}">Crear la primera</a>
+      </div>
+    {% endif %}
+  </section>
+</section>
+{% endblock %}

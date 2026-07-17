@@ -17,6 +17,7 @@ from emex.auth.routes import auth_bp
 from emex.worker.routes import worker_bp
 from emex.admin.routes import admin_bp
 from emex.api.routes import api_bp
+from emex.planning.routes import planning_bp
 
 
 def _ensure_runtime_schema(app):
@@ -37,6 +38,11 @@ def _ensure_runtime_schema(app):
                 db.session.execute(text("ALTER TABLE operator_logs ADD COLUMN trip_type VARCHAR(80) NULL"))
                 db.session.commit()
                 app.logger.info("AUTO_SCHEMA_FIX: columna operator_logs.trip_type creada.")
+
+            # Tablas de planeación diaria (crea solo las faltantes; no toca las existentes)
+            if not inspector.has_table("daily_plans"):
+                db.create_all()
+                app.logger.info("AUTO_SCHEMA_FIX: tablas daily_plans / plan_items creadas.")
         except Exception as exc:
             db.session.rollback()
             app.logger.warning("AUTO_SCHEMA_FIX no pudo validar/actualizar el esquema: %s", exc)
@@ -94,6 +100,7 @@ def create_app():
     app.register_blueprint(worker_bp, url_prefix="/worker")
     app.register_blueprint(admin_bp, url_prefix="/admin")
     app.register_blueprint(api_bp)
+    app.register_blueprint(planning_bp)
 
     # ---------- CLI: seed general ----------
     @app.cli.command("seed")

@@ -8,6 +8,7 @@ from ..extensions import db
 from ..models import User, WhatsappSession, OperatorLog, Unit, FuelPurchase
 from .evolution_client import send_whatsapp_message
 from .openai_service import process_whatsapp_message
+from .plan_service import is_plan_query, answer_plan_query
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 
@@ -88,6 +89,14 @@ def evolution_webhook():
     
     if not text_content:
         return jsonify({"status": "ignored", "reason": "empty text"}), 200
+
+    # --- Consulta de planeación (no es un registro): responder y salir ---
+    if is_plan_query(text_content):
+        sender = User.query.filter_by(phone=phone_number).first()
+        reply = answer_plan_query(text_content, sender)
+        print(f"[Plan Query] from={phone_number}, reply={reply[:60]}")
+        send_whatsapp_message(chat_id, reply)
+        return jsonify({"status": "success", "handled": "plan_query"}), 200
 
     user = User.query.filter_by(phone=phone_number).first()
     

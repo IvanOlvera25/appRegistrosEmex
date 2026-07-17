@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+{% block title %}Nueva planeación · EMEX{% endblock %}
+
+{% block head_extra %}
+<style>
+  .plan-form label{ display:flex; flex-direction:column; gap:5px; font-weight:700; color:#334155; font-size:.9rem; }
+  .plan-form input, .plan-form select, .plan-form textarea{
+    padding:.55rem .65rem; border:1px solid #e2e8f0; border-radius:10px; background:#fff; font:inherit;
+  }
+  .plan-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+  .item-row{ border:1px solid #e2e8f0; border-radius:14px; padding:14px; margin-bottom:12px; background:#f8fafc; }
+  .item-row .row-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+  .item-row .row-head strong{ color:#1e40af; }
+  .item-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
+  .hint-type{ font-size:.8rem; color:#64748b; }
+  .btn-remove{ background:#fee2e2; color:#991b1b; border:none; border-radius:8px; padding:.35rem .7rem; font-weight:800; cursor:pointer; }
+  @media (max-width:820px){ .plan-grid, .item-grid{ grid-template-columns:1fr; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="dashboard">
+  <header class="dash-head">
+    <div>
+      <h1 class="title">Nueva planeación</h1>
+      <p class="subtitle">Asigna las tareas del día a un trabajador.</p>
+    </div>
+    <div class="dash-actions">
+      <a class="btn subtle" href="{{ url_for('planning.index') }}">Volver</a>
+    </div>
+  </header>
+
+  <form method="post" class="plan-form">
+    <section class="card">
+      <h2 class="mini-card-title">Datos generales</h2>
+      <div class="plan-grid">
+        <label>Fecha *
+          <input type="date" name="plan_date" value="{{ default_day.isoformat() }}" required>
+        </label>
+        <label>Trabajador *
+          <select name="worker_id" id="workerSelect" required>
+            <option value="">— Selecciona —</option>
+            {% for w in workers %}
+              <option value="{{ w.id }}">{{ w.name }}{% if w.job_title %} · {{ w.job_title }}{% endif %}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>Tipo de planeación *
+          <select name="plan_type" id="typeSelect" required>
+            {% for t in plan_types %}
+              <option value="{{ t }}">{{ t.capitalize() }}</option>
+            {% endfor %}
+          </select>
+          <span class="hint-type">Se sugiere según el cargo; puedes cambiarlo.</span>
+        </label>
+      </div>
+      <label style="margin-top:12px">Notas generales (opcional)
+        <textarea name="notes" rows="2" placeholder="Indicaciones del día, prioridades, etc."></textarea>
+      </label>
+    </section>
+
+    <section class="card" style="margin-top:12px">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px">
+        <h2 class="mini-card-title" style="margin:0">Tareas</h2>
+        <button type="button" class="btn btn-primary" onclick="addItem()">+ Agregar tarea</button>
+      </div>
+      <p class="hint-type" id="typeHelp" style="margin-bottom:12px"></p>
+
+      <div id="itemsContainer"><!-- filas dinámicas --></div>
+
+      <div style="margin-top:16px; display:flex; gap:10px">
+        <button type="submit" class="btn btn-primary">Guardar planeación</button>
+        <a class="btn subtle" href="{{ url_for('planning.index') }}">Cancelar</a>
+      </div>
+    </section>
+  </form>
+</section>
+
+<!-- Plantilla de fila (oculta) -->
+<template id="itemTemplate">
+  <div class="item-row">
+    <div class="row-head">
+      <strong class="row-title">Tarea</strong>
+      <button type="button" class="btn-remove" onclick="removeItem(this)">Quitar</button>
+    </div>
+    <label>Descripción *
+      <input type="text" name="item_description[]" placeholder="Ej. Acarreo de material QRO → Obra Norte" required>
+    </label>
+    <div class="item-grid" style="margin-top:10px">
+      <label>Unidad
+        <select name="item_unit_id[]">
+          <option value="">— Sin unidad —</option>
+          {% for u in units %}<option value="{{ u.id }}">{{ u.code }}{% if u.description %} · {{ u.description }}{% endif %}</option>{% endfor %}
+        </select>
+      </label>
+      <label class="field-project">Obra
+        <select name="item_project_id[]">
+          <option value="">— Sin obra —</option>
+          {% for p in projects %}<option value="{{ p.id }}">{{ p.name }}</option>{% endfor %}
+        </select>
+      </label>
+      <label class="field-route">Ruta
+        <select name="item_route_id[]">
+          <option value="">— Sin ruta —</option>
+          {% for r in routes %}<option value="{{ r.id }}">{{ r.label }}</option>{% endfor %}
+        </select>
+      </label>
+      <label class="field-trip">Tipo de viaje
+        <input type="text" name="item_trip_type[]" placeholder="Ej. acarreo, foráneo, traslado">
+      </label>
+      <label>Cantidad / monto
+        <input type="text" name="item_quantity[]" placeholder="Ej. 3 viajes · 200 L · $5,000">
+      </label>
+    </div>
+  </div>
+</template>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const WORKER_TYPES = {{ worker_type_map|tojson }};
+  const TYPE_HELP = {
+    operador: "Operador: asigna obra y unidad por tarea.",
+    chofer: "Chofer: asigna un renglón por viaje (ruta, unidad, tipo de viaje).",
+    mantenimiento: "Mantenimiento: indica la unidad y qué mantenimiento se hará.",
+    compras: "Gestor de compras: lista qué se va a comprar y el monto/cantidad."
+  };
+
+  const container = document.getElementById('itemsContainer');
+  const tpl = document.getElementById('itemTemplate');
+  const typeSelect = document.getElementById('typeSelect');
+  const workerSelect = document.getElementById('workerSelect');
+  const typeHelp = document.getElementById('typeHelp');
+
+  function refreshFieldVisibility(){
+    const t = typeSelect.value;
+    typeHelp.textContent = TYPE_HELP[t] || "";
+    container.querySelectorAll('.item-row').forEach(row => {
+      const proj = row.querySelector('.field-project');
+      const route = row.querySelector('.field-route');
+      const trip = row.querySelector('.field-trip');
+      // Mostrar lo relevante por tipo, sin ocultar del todo (siguen siendo opcionales)
+      proj.style.display  = (t === 'operador') ? '' : 'none';
+      route.style.display = (t === 'chofer') ? '' : 'none';
+      trip.style.display  = (t === 'chofer') ? '' : 'none';
+    });
+  }
+
+  function renumber(){
+    container.querySelectorAll('.item-row .row-title').forEach((el, i) => {
+      el.textContent = 'Tarea ' + (i + 1);
+    });
+  }
+
+  function addItem(){
+    const node = tpl.content.cloneNode(true);
+    container.appendChild(node);
+    renumber();
+    refreshFieldVisibility();
+  }
+
+  function removeItem(btn){
+    const row = btn.closest('.item-row');
+    row.remove();
+    renumber();
+  }
+
+  workerSelect.addEventListener('change', () => {
+    const suggested = WORKER_TYPES[workerSelect.value];
+    if (suggested) { typeSelect.value = suggested; }
+    refreshFieldVisibility();
+  });
+  typeSelect.addEventListener('change', refreshFieldVisibility);
+
+  // Arrancar con una tarea
+  addItem();
+</script>
+{% endblock %}

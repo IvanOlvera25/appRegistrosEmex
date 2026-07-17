@@ -409,6 +409,10 @@
               <a class="nav-link {{ 'is-active' if ep == 'admin.dispersions' }}"
                  href="{{ url_for('admin.dispersions') }}">⛽ Diesel</a>
             </li>
+            <li>
+              <a class="nav-link {{ 'is-active' if ep.startswith('planning.') }}"
+                 href="{{ url_for('planning.index') }}">🗓️ Planeación</a>
+            </li>
           {% else %}
             <li>
               <a class="nav-link {{ 'is-active' if ep == 'auth.user_panel' }}"
