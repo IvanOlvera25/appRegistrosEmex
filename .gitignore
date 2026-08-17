@@ -13,8 +13,12 @@ __pycache__/
 instance/
 *.sqlite3
 *.db
+*.db-shm
+*.db-wal
 
 # Archivos del sistema
 .DS_Store
 __MACOSX/
 qr_*.png
+*_qr.png
+last_qr.png
